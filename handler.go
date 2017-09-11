@@ -85,8 +85,6 @@ func (p *IntergridHandler) Zip() (err error) {
 
 func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
 	var user *User
-	//db, err := sqlx.Connect("postgres", "postgres://postgres:cwlybjel@localhost/OnGrid?sslmode=disable")
-	//db, err = sqlx.Connect("firebirdsql", "sysdba:masterkey@localhost:3050/c:/autosolution/database/infiniti.fdb")
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
 	if err != nil {
 		log.Fatalln("Connect: ", err)
@@ -124,7 +122,6 @@ func (p *IntergridHandler) Logout(authToken string) error {
 
 func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string) (token string, err error) {
 	var user *User
-	//db, err = sqlx.Connect("firebirdsql", "sysdba:masterkey@localhost:3050/c:/autosolution/database/infiniti.fdb")
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
 	if err != nil {
 		log.Fatalln("Connect: ", err)
