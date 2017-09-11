@@ -22,8 +22,8 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"ongrid-thrift/ongrid2"
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"ongrid-thrift/ongrid2"
 )
 
 func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, addr string, secure bool) error {
@@ -44,11 +44,11 @@ func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%T\n", transport)
+
 	handler := NewIntergridHandler()
 	processor := ongrid2.NewIntergridProcessor(handler)
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 
-	fmt.Println("Starting the simple server... on ", addr)
+	fmt.Println("Starting the ongrid-thrift server... on ", addr)
 	return server.Serve()
 }

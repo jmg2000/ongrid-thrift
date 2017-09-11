@@ -21,16 +21,18 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "Usage of ", os.Args[0], " [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:")
   flag.PrintDefaults()
   fmt.Fprintln(os.Stderr, "\nFunctions:")
-  fmt.Fprintln(os.Stderr, "  string login(string login, string password)")
+  fmt.Fprintln(os.Stderr, "  string login(string macaddr)")
   fmt.Fprintln(os.Stderr, "  void logout(string authToken)")
+  fmt.Fprintln(os.Stderr, "  string addWorkPlace(string wpname, string macaddr, string login, string password)")
   fmt.Fprintln(os.Stderr, "  DataRowSet executeSelectQuery(string authToken, Query query)")
   fmt.Fprintln(os.Stderr, "  void executeNonSelectQuery(string authToken, Query query)")
   fmt.Fprintln(os.Stderr, "  string startBatchExecution(string authToken)")
   fmt.Fprintln(os.Stderr, "  void addQuery(string authToken, string batchID, Query query)")
   fmt.Fprintln(os.Stderr, "  string finishBatchExecution(string authToken, string batchID, Query condition, Query onSuccess)")
   fmt.Fprintln(os.Stderr, "  string batchExecute(string authToken,  queries, Query condition, Query onSuccess)")
+  fmt.Fprintln(os.Stderr, "   getEvents(string authToken, string last)")
+  fmt.Fprintln(os.Stderr, "  void postEvent(string authToken, Event event)")
   fmt.Fprintln(os.Stderr, "  void ping()")
-  fmt.Fprintln(os.Stderr, "  i32 add(i32 num1, i32 num2)")
   fmt.Fprintln(os.Stderr, "  void zip()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
@@ -127,15 +129,13 @@ func main() {
   
   switch cmd {
   case "login":
-    if flag.NArg() - 1 != 2 {
-      fmt.Fprintln(os.Stderr, "Login requires 2 args")
+    if flag.NArg() - 1 != 1 {
+      fmt.Fprintln(os.Stderr, "Login requires 1 args")
       flag.Usage()
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1 := flag.Arg(2)
-    value1 := argvalue1
-    fmt.Print(client.Login(value0, value1))
+    fmt.Print(client.Login(value0))
     fmt.Print("\n")
     break
   case "logout":
@@ -148,6 +148,22 @@ func main() {
     fmt.Print(client.Logout(value0))
     fmt.Print("\n")
     break
+  case "addWorkPlace":
+    if flag.NArg() - 1 != 4 {
+      fmt.Fprintln(os.Stderr, "AddWorkPlace requires 4 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    argvalue1 := flag.Arg(2)
+    value1 := argvalue1
+    argvalue2 := flag.Arg(3)
+    value2 := argvalue2
+    argvalue3 := flag.Arg(4)
+    value3 := argvalue3
+    fmt.Print(client.AddWorkPlace(value0, value1, value2, value3))
+    fmt.Print("\n")
+    break
   case "executeSelectQuery":
     if flag.NArg() - 1 != 2 {
       fmt.Fprintln(os.Stderr, "ExecuteSelectQuery requires 2 args")
@@ -155,19 +171,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg31 := flag.Arg(2)
-    mbTrans32 := thrift.NewTMemoryBufferLen(len(arg31))
-    defer mbTrans32.Close()
-    _, err33 := mbTrans32.WriteString(arg31)
-    if err33 != nil {
+    arg39 := flag.Arg(2)
+    mbTrans40 := thrift.NewTMemoryBufferLen(len(arg39))
+    defer mbTrans40.Close()
+    _, err41 := mbTrans40.WriteString(arg39)
+    if err41 != nil {
       Usage()
       return
     }
-    factory34 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt35 := factory34.GetProtocol(mbTrans32)
+    factory42 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt43 := factory42.GetProtocol(mbTrans40)
     argvalue1 := ongrid2.NewQuery()
-    err36 := argvalue1.Read(jsProt35)
-    if err36 != nil {
+    err44 := argvalue1.Read(jsProt43)
+    if err44 != nil {
       Usage()
       return
     }
@@ -182,19 +198,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg38 := flag.Arg(2)
-    mbTrans39 := thrift.NewTMemoryBufferLen(len(arg38))
-    defer mbTrans39.Close()
-    _, err40 := mbTrans39.WriteString(arg38)
-    if err40 != nil {
+    arg46 := flag.Arg(2)
+    mbTrans47 := thrift.NewTMemoryBufferLen(len(arg46))
+    defer mbTrans47.Close()
+    _, err48 := mbTrans47.WriteString(arg46)
+    if err48 != nil {
       Usage()
       return
     }
-    factory41 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt42 := factory41.GetProtocol(mbTrans39)
+    factory49 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt50 := factory49.GetProtocol(mbTrans47)
     argvalue1 := ongrid2.NewQuery()
-    err43 := argvalue1.Read(jsProt42)
-    if err43 != nil {
+    err51 := argvalue1.Read(jsProt50)
+    if err51 != nil {
       Usage()
       return
     }
@@ -221,35 +237,6 @@ func main() {
     value0 := argvalue0
     argvalue1 := flag.Arg(2)
     value1 := argvalue1
-    arg47 := flag.Arg(3)
-    mbTrans48 := thrift.NewTMemoryBufferLen(len(arg47))
-    defer mbTrans48.Close()
-    _, err49 := mbTrans48.WriteString(arg47)
-    if err49 != nil {
-      Usage()
-      return
-    }
-    factory50 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt51 := factory50.GetProtocol(mbTrans48)
-    argvalue2 := ongrid2.NewQuery()
-    err52 := argvalue2.Read(jsProt51)
-    if err52 != nil {
-      Usage()
-      return
-    }
-    value2 := argvalue2
-    fmt.Print(client.AddQuery(value0, value1, value2))
-    fmt.Print("\n")
-    break
-  case "finishBatchExecution":
-    if flag.NArg() - 1 != 4 {
-      fmt.Fprintln(os.Stderr, "FinishBatchExecution requires 4 args")
-      flag.Usage()
-    }
-    argvalue0 := flag.Arg(1)
-    value0 := argvalue0
-    argvalue1 := flag.Arg(2)
-    value1 := argvalue1
     arg55 := flag.Arg(3)
     mbTrans56 := thrift.NewTMemoryBufferLen(len(arg55))
     defer mbTrans56.Close()
@@ -267,19 +254,48 @@ func main() {
       return
     }
     value2 := argvalue2
-    arg61 := flag.Arg(4)
-    mbTrans62 := thrift.NewTMemoryBufferLen(len(arg61))
-    defer mbTrans62.Close()
-    _, err63 := mbTrans62.WriteString(arg61)
-    if err63 != nil {
+    fmt.Print(client.AddQuery(value0, value1, value2))
+    fmt.Print("\n")
+    break
+  case "finishBatchExecution":
+    if flag.NArg() - 1 != 4 {
+      fmt.Fprintln(os.Stderr, "FinishBatchExecution requires 4 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    argvalue1 := flag.Arg(2)
+    value1 := argvalue1
+    arg63 := flag.Arg(3)
+    mbTrans64 := thrift.NewTMemoryBufferLen(len(arg63))
+    defer mbTrans64.Close()
+    _, err65 := mbTrans64.WriteString(arg63)
+    if err65 != nil {
       Usage()
       return
     }
-    factory64 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt65 := factory64.GetProtocol(mbTrans62)
+    factory66 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt67 := factory66.GetProtocol(mbTrans64)
+    argvalue2 := ongrid2.NewQuery()
+    err68 := argvalue2.Read(jsProt67)
+    if err68 != nil {
+      Usage()
+      return
+    }
+    value2 := argvalue2
+    arg69 := flag.Arg(4)
+    mbTrans70 := thrift.NewTMemoryBufferLen(len(arg69))
+    defer mbTrans70.Close()
+    _, err71 := mbTrans70.WriteString(arg69)
+    if err71 != nil {
+      Usage()
+      return
+    }
+    factory72 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt73 := factory72.GetProtocol(mbTrans70)
     argvalue3 := ongrid2.NewQuery()
-    err66 := argvalue3.Read(jsProt65)
-    if err66 != nil {
+    err74 := argvalue3.Read(jsProt73)
+    if err74 != nil {
       Usage()
       return
     }
@@ -294,59 +310,98 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg68 := flag.Arg(2)
-    mbTrans69 := thrift.NewTMemoryBufferLen(len(arg68))
-    defer mbTrans69.Close()
-    _, err70 := mbTrans69.WriteString(arg68)
-    if err70 != nil { 
+    arg76 := flag.Arg(2)
+    mbTrans77 := thrift.NewTMemoryBufferLen(len(arg76))
+    defer mbTrans77.Close()
+    _, err78 := mbTrans77.WriteString(arg76)
+    if err78 != nil { 
       Usage()
       return
     }
-    factory71 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt72 := factory71.GetProtocol(mbTrans69)
+    factory79 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt80 := factory79.GetProtocol(mbTrans77)
     containerStruct1 := ongrid2.NewIntergridBatchExecuteArgs()
-    err73 := containerStruct1.ReadField2(jsProt72)
-    if err73 != nil {
+    err81 := containerStruct1.ReadField2(jsProt80)
+    if err81 != nil {
       Usage()
       return
     }
     argvalue1 := containerStruct1.Queries
     value1 := argvalue1
-    arg74 := flag.Arg(3)
-    mbTrans75 := thrift.NewTMemoryBufferLen(len(arg74))
-    defer mbTrans75.Close()
-    _, err76 := mbTrans75.WriteString(arg74)
-    if err76 != nil {
+    arg82 := flag.Arg(3)
+    mbTrans83 := thrift.NewTMemoryBufferLen(len(arg82))
+    defer mbTrans83.Close()
+    _, err84 := mbTrans83.WriteString(arg82)
+    if err84 != nil {
       Usage()
       return
     }
-    factory77 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt78 := factory77.GetProtocol(mbTrans75)
+    factory85 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt86 := factory85.GetProtocol(mbTrans83)
     argvalue2 := ongrid2.NewQuery()
-    err79 := argvalue2.Read(jsProt78)
-    if err79 != nil {
+    err87 := argvalue2.Read(jsProt86)
+    if err87 != nil {
       Usage()
       return
     }
     value2 := argvalue2
-    arg80 := flag.Arg(4)
-    mbTrans81 := thrift.NewTMemoryBufferLen(len(arg80))
-    defer mbTrans81.Close()
-    _, err82 := mbTrans81.WriteString(arg80)
-    if err82 != nil {
+    arg88 := flag.Arg(4)
+    mbTrans89 := thrift.NewTMemoryBufferLen(len(arg88))
+    defer mbTrans89.Close()
+    _, err90 := mbTrans89.WriteString(arg88)
+    if err90 != nil {
       Usage()
       return
     }
-    factory83 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt84 := factory83.GetProtocol(mbTrans81)
+    factory91 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt92 := factory91.GetProtocol(mbTrans89)
     argvalue3 := ongrid2.NewQuery()
-    err85 := argvalue3.Read(jsProt84)
-    if err85 != nil {
+    err93 := argvalue3.Read(jsProt92)
+    if err93 != nil {
       Usage()
       return
     }
     value3 := argvalue3
     fmt.Print(client.BatchExecute(value0, value1, value2, value3))
+    fmt.Print("\n")
+    break
+  case "getEvents":
+    if flag.NArg() - 1 != 2 {
+      fmt.Fprintln(os.Stderr, "GetEvents requires 2 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    argvalue1 := flag.Arg(2)
+    value1 := argvalue1
+    fmt.Print(client.GetEvents(value0, value1))
+    fmt.Print("\n")
+    break
+  case "postEvent":
+    if flag.NArg() - 1 != 2 {
+      fmt.Fprintln(os.Stderr, "PostEvent requires 2 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    arg97 := flag.Arg(2)
+    mbTrans98 := thrift.NewTMemoryBufferLen(len(arg97))
+    defer mbTrans98.Close()
+    _, err99 := mbTrans98.WriteString(arg97)
+    if err99 != nil {
+      Usage()
+      return
+    }
+    factory100 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt101 := factory100.GetProtocol(mbTrans98)
+    argvalue1 := ongrid2.NewEvent()
+    err102 := argvalue1.Read(jsProt101)
+    if err102 != nil {
+      Usage()
+      return
+    }
+    value1 := argvalue1
+    fmt.Print(client.PostEvent(value0, value1))
     fmt.Print("\n")
     break
   case "ping":
@@ -355,28 +410,6 @@ func main() {
       flag.Usage()
     }
     fmt.Print(client.Ping())
-    fmt.Print("\n")
-    break
-  case "add":
-    if flag.NArg() - 1 != 2 {
-      fmt.Fprintln(os.Stderr, "Add requires 2 args")
-      flag.Usage()
-    }
-    tmp0, err86 := (strconv.Atoi(flag.Arg(1)))
-    if err86 != nil {
-      Usage()
-      return
-    }
-    argvalue0 := int32(tmp0)
-    value0 := argvalue0
-    tmp1, err87 := (strconv.Atoi(flag.Arg(2)))
-    if err87 != nil {
-      Usage()
-      return
-    }
-    argvalue1 := int32(tmp1)
-    value1 := argvalue1
-    fmt.Print(client.Add(value0, value1))
     fmt.Print("\n")
     break
   case "zip":
