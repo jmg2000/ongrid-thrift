@@ -13,3 +13,5 @@
 *.lst
 *.sel
 *.dll
+*.conf
+ongrid-thrift_linux_amd64

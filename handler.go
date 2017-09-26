@@ -23,13 +23,14 @@ import (
 	"crypto/md5"
 	_ "database/sql"
 	"fmt"
-	"github.com/jmoiron/sqlx"
-	"github.com/kylelemons/go-gypsy/yaml"
-	_ "github.com/nakagami/firebirdsql"
 	"io"
 	"log"
 	"ongrid-thrift/ongrid2"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/kylelemons/go-gypsy/yaml"
+	_ "github.com/nakagami/firebirdsql"
 )
 
 type DBConfig struct {
@@ -47,13 +48,25 @@ type User struct {
 	DBName   string `db:"DBNAME"`
 }
 
-var queries map[string][]ongrid2.Query
-var transactionId int
+type Session struct {
+	ID            int
+	user          *User
+	queries       map[string][]ongrid2.Query
+	transactionID int
+}
+
+type Sessions map[int]*Session
+
+var lastSessionID int
+var sessions Sessions
+//var queries map[string][]ongrid2.Query
+//var transactionID int
 var dbOnGrid, dbClient *sqlx.DB
 var dbConf DBConfig
 
+
 func init() {
-	config, err := yaml.ReadFile("ongrid.conf")
+	config, err := yaml.ReadFile("config/ongrid.conf")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -64,6 +77,8 @@ func init() {
 	dbConf.Host, _ = config.Get("dbhost")
 	dbConf.Port, _ = config.Get("dbport")
 	dbConf.Path, _ = config.Get("dbpath")
+
+	sessions = make(Sessions)
 }
 
 type IntergridHandler struct {
@@ -83,6 +98,7 @@ func (p *IntergridHandler) Zip() (err error) {
 	return nil
 }
 
+// Login - авторизация в системе по мак адресу
 func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
 	var user *User
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
@@ -99,7 +115,7 @@ func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
 		return
 	}
 	log.Printf("Auth.. Token = %s", token)
-	
+
 	// Connect to client database
 	dbClient, err = sqlx.Connect("firebirdsql", user.DBName)
 	if err != nil {
@@ -110,16 +126,25 @@ func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
 	return
 }
 
-func (p *IntergridHandler) Logout(authToken string) error {
+// Logout - выход из системы
+func (p *IntergridHandler) Logout(authToken string) (err error) {
+	var sessionID int
+	if sessionID, err = checkToken(authToken); err != nil {
+		return 
+	}
+
 	dbOnGrid.MustExec("update sys$sessions set active = 0, closed_at = ? where token = ? and active = 1", time.Now(), authToken)
 	dbClient.Close()
 	dbOnGrid.Close()
+
+	delete(sessions, sessionID)
 
 	log.Println("Logout: Databases connections closed")
 
 	return nil
 }
 
+// AddWorkPlace добавляет новое рабочее место в таблицу sys$workplaces
 func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string) (token string, err error) {
 	var user *User
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
@@ -156,12 +181,15 @@ func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string)
 
 /* SQL function */
 
+// ExecuteSelectQuery выполняет sql запрос и возвращает результат
 func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Query) (*ongrid2.DataRowSet, error) {
-	if err := checkToken(authToken); err != nil {
+	if _, err := checkToken(authToken); err != nil {
 		return nil, err
 	}
 
 	var dataRowSet ongrid2.DataRowSet
+
+	start := time.Now()
 
 	rows, err := dbClient.NamedQuery(query.Sql, getParams(query))
 	if err != nil {
@@ -198,6 +226,8 @@ func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Q
 		dataRowSet.Columns = append(dataRowSet.Columns, &colomnMetadata)
 	}
 
+	var rowsCount int
+
 	for rows.Next() {
 		dataRow := ongrid2.DataRow{}
 		columnValues, err := rows.SliceScan()
@@ -230,15 +260,20 @@ func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Q
 
 			dataRow.Fields = append(dataRow.Fields, &dataField)
 		}
-		//fmt.Println(columnValues)
+
 		dataRowSet.Rows = append(dataRowSet.Rows, &dataRow)
+
+		rowsCount++
 	}
+
+	log.Printf("ExecuteSelectQuery complete, selected %d rows, %.2fs elapsed\n", rowsCount, time.Since(start).Seconds())
 
 	return &dataRowSet, nil
 }
 
+// ExecuteNonSelectQuery аналог ExecSQL, не возвращает результата запроса
 func (p *IntergridHandler) ExecuteNonSelectQuery(authToken string, query *ongrid2.Query) error {
-	if err := checkToken(authToken); err != nil {
+	if _, err := checkToken(authToken); err != nil {
 		return err
 	}
 
@@ -249,29 +284,37 @@ func (p *IntergridHandler) ExecuteNonSelectQuery(authToken string, query *ongrid
 	return err
 }
 
+// StartBatchExecution возвращяет новый batchId
 func (p *IntergridHandler) StartBatchExecution(authToken string) (string, error) {
-	if err := checkToken(authToken); err != nil {
+	var sessionID int
+	var err error
+	if sessionID, err = checkToken(authToken); err != nil {
 		return "", err
 	}
-	transactionId += 1
-	return string(transactionId), nil
+	sessions[sessionID].transactionID += 1
+	return string(sessions[sessionID].transactionID), nil
 }
 
-func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ongrid2.Query) error {
-	if err := checkToken(authToken); err != nil {
+// AddQuery добавляет запрос в map queries с определенным batchId
+func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ongrid2.Query) (err error) {
+	var sessionID int
+	if sessionID, err = checkToken(authToken); err != nil {
 		return err
 	}
-	queries[batchId] = append(queries[batchId], *query)
+	sessions[sessionID].queries[batchId] = append(sessions[sessionID].queries[batchId], *query)
 	return nil
 }
 
+// FinishBatchExecution выполняет все запросы из map queries с определенным batchId
 func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
-	if err := checkToken(authToken); err != nil {
+	var sessionID int
+	var err error
+	if sessionID, err = checkToken(authToken); err != nil {
 		return "", err
 	}
 
 	tx := dbClient.MustBegin()
-	for _, query := range queries[batchId] {
+	for _, query := range sessions[sessionID].queries[batchId] {
 		_, err := tx.NamedExec(query.Sql, getParams(&query))
 		if err != nil {
 			return "", fmt.Errorf("FinishBatchExecute error: query: %s - %v", query.Sql, err)
@@ -279,7 +322,7 @@ func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string
 	}
 	tx.Commit()
 
-	_, err := dbClient.NamedExec(onSuccess.Sql, getParams(onSuccess))
+	_, err = dbClient.NamedExec(onSuccess.Sql, getParams(onSuccess))
 	if err != nil {
 		return "", fmt.Errorf("FinishBatchExecute, onSuccess error: query: %s - %v", onSuccess.Sql, err)
 	}
@@ -287,8 +330,9 @@ func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string
 	return "", nil
 }
 
+// BatchExecute выполняет в транзакции все запросы из queries
 func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Query, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
-	if err := checkToken(authToken); err != nil {
+	if _, err := checkToken(authToken); err != nil {
 		return "", err
 	}
 	tx := dbClient.MustBegin()
@@ -333,6 +377,10 @@ func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.
 	var dbRequest Request
 	var request ongrid2.Request
 
+	if _, err = checkToken(authToken); err != nil {
+		return nil, err
+	}
+
 	rows, err := dbOnGrid.Queryx("select * from sys$requests where id > ?", last)
 	if err != nil {
 		log.Printf("GetEvents: %v\n", err)
@@ -358,7 +406,7 @@ func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.
 		request.Status = ongrid2.RequestStatus(dbRequest.Status)
 		request.MasterInspector = dbRequest.MasterInspector
 
-		event.ID = fmt.Sprintf("%s", dbRequest.Id)
+		event.ID = fmt.Sprintf("%d", dbRequest.Id)
 		event.Type = ongrid2.EventType_REQUEST
 		event.Request = &request
 
@@ -368,7 +416,12 @@ func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.
 	return
 }
 
+// PostEvent create or update event in backend
 func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) error {
+	if _, err := checkToken(authToken); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -456,15 +509,20 @@ func startSession(user *User) string {
 	dbOnGrid.MustExec("insert into sys$sessions (login,token,created_at,active) values ( ? , ? , ? , ? )", user.Login, authToken, time.Now(), 1)
 	log.Println("insert into sys$sessions complete..")
 
+	sessions[lastSessionID] = &Session{user: user}
+	log.Printf("Session id = %d", lastSessionID)
+	lastSessionID++
+
 	return authToken
 }
 
+// checkToken проверяет активность сессии и возвращает id сессии
 // TODO: хранить токен в памяти, чтобы перед каждым запросом не лезть в базу
-func checkToken(authToken string) error {
+func checkToken(authToken string) (int, error) {
 	var sessionId int
 	err := dbOnGrid.QueryRowx("select id from sys$sessions where token = ? and active = 1", authToken).Scan(&sessionId)
 	if err != nil {
-		return fmt.Errorf("Token unknown: %v", err)
+		return 0, fmt.Errorf("Token unknown: %v", err)
 	}
-	return nil
+	return sessionId, nil
 }
