@@ -49,21 +49,18 @@ type User struct {
 }
 
 type Session struct {
-	ID            int
+	token         string
 	user          *User
 	queries       map[string][]ongrid2.Query
 	transactionID int
+	db            *sqlx.DB
 }
 
 type Sessions map[int]*Session
 
-var lastSessionID int
 var sessions Sessions
-//var queries map[string][]ongrid2.Query
-//var transactionID int
-var dbOnGrid, dbClient *sqlx.DB
+var dbOnGrid *sqlx.DB
 var dbConf DBConfig
-
 
 func init() {
 	config, err := yaml.ReadFile("config/ongrid.conf")
@@ -100,15 +97,14 @@ func (p *IntergridHandler) Zip() (err error) {
 
 // Login - авторизация в системе по мак адресу
 func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
-	var user *User
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
 	if err != nil {
 		log.Fatalln("Connect: ", err)
 		return "", err
 	}
-	log.Println("Login: Database connection established")
+	log.Println("Login: System database connection established")
 
-	token, user, err = authMac(macAddr)
+	token, err = authMac(macAddr)
 	if err != nil {
 		dbOnGrid.Close()
 		log.Println("Login: Database connection closed")
@@ -116,25 +112,18 @@ func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
 	}
 	log.Printf("Auth.. Token = %s", token)
 
-	// Connect to client database
-	dbClient, err = sqlx.Connect("firebirdsql", user.DBName)
-	if err != nil {
-		log.Fatalln("Connect to client db: ", err)
-		return "", err
-	}
-	log.Println("Login: Cleint database connection established")
 	return
 }
 
 // Logout - выход из системы
-func (p *IntergridHandler) Logout(authToken string) (err error) {
-	var sessionID int
-	if sessionID, err = checkToken(authToken); err != nil {
-		return 
+func (p *IntergridHandler) Logout(authToken string) error {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return err
 	}
 
 	dbOnGrid.MustExec("update sys$sessions set active = 0, closed_at = ? where token = ? and active = 1", time.Now(), authToken)
-	dbClient.Close()
+	sessions[sessionID].db.Close()
 	dbOnGrid.Close()
 
 	delete(sessions, sessionID)
@@ -169,13 +158,6 @@ func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string)
 	}
 	log.Printf("AddWorkPlace: Auth.. Token = %s", token)
 
-	// Connect to client database
-	dbClient, err = sqlx.Connect("firebirdsql", user.DBName)
-	if err != nil {
-		log.Fatalln("Connect to client db: ", err)
-		return "", err
-	}
-	log.Println("Login: Cleint database connection established")
 	return
 }
 
@@ -183,7 +165,8 @@ func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string)
 
 // ExecuteSelectQuery выполняет sql запрос и возвращает результат
 func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Query) (*ongrid2.DataRowSet, error) {
-	if _, err := checkToken(authToken); err != nil {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return nil, err
 	}
 
@@ -191,7 +174,7 @@ func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Q
 
 	start := time.Now()
 
-	rows, err := dbClient.NamedQuery(query.Sql, getParams(query))
+	rows, err := sessions[sessionID].db.NamedQuery(query.Sql, getParams(query))
 	if err != nil {
 		return nil, fmt.Errorf("ExecuteSelectQuery error: %v", err)
 	}
@@ -273,11 +256,12 @@ func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Q
 
 // ExecuteNonSelectQuery аналог ExecSQL, не возвращает результата запроса
 func (p *IntergridHandler) ExecuteNonSelectQuery(authToken string, query *ongrid2.Query) error {
-	if _, err := checkToken(authToken); err != nil {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return err
 	}
 
-	_, err := dbClient.NamedExec(query.Sql, getParams(query))
+	_, err = sessions[sessionID].db.NamedExec(query.Sql, getParams(query))
 	if err != nil {
 		log.Printf("ExecuteNonSelectQuery error: %v", err)
 	}
@@ -286,9 +270,8 @@ func (p *IntergridHandler) ExecuteNonSelectQuery(authToken string, query *ongrid
 
 // StartBatchExecution возвращяет новый batchId
 func (p *IntergridHandler) StartBatchExecution(authToken string) (string, error) {
-	var sessionID int
-	var err error
-	if sessionID, err = checkToken(authToken); err != nil {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return "", err
 	}
 	sessions[sessionID].transactionID += 1
@@ -296,9 +279,9 @@ func (p *IntergridHandler) StartBatchExecution(authToken string) (string, error)
 }
 
 // AddQuery добавляет запрос в map queries с определенным batchId
-func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ongrid2.Query) (err error) {
-	var sessionID int
-	if sessionID, err = checkToken(authToken); err != nil {
+func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ongrid2.Query) error {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return err
 	}
 	sessions[sessionID].queries[batchId] = append(sessions[sessionID].queries[batchId], *query)
@@ -307,13 +290,12 @@ func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ong
 
 // FinishBatchExecution выполняет все запросы из map queries с определенным batchId
 func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
-	var sessionID int
-	var err error
-	if sessionID, err = checkToken(authToken); err != nil {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return "", err
 	}
 
-	tx := dbClient.MustBegin()
+	tx := sessions[sessionID].db.MustBegin()
 	for _, query := range sessions[sessionID].queries[batchId] {
 		_, err := tx.NamedExec(query.Sql, getParams(&query))
 		if err != nil {
@@ -322,7 +304,7 @@ func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string
 	}
 	tx.Commit()
 
-	_, err = dbClient.NamedExec(onSuccess.Sql, getParams(onSuccess))
+	_, err = sessions[sessionID].db.NamedExec(onSuccess.Sql, getParams(onSuccess))
 	if err != nil {
 		return "", fmt.Errorf("FinishBatchExecute, onSuccess error: query: %s - %v", onSuccess.Sql, err)
 	}
@@ -332,10 +314,11 @@ func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string
 
 // BatchExecute выполняет в транзакции все запросы из queries
 func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Query, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
-	if _, err := checkToken(authToken); err != nil {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return "", err
 	}
-	tx := dbClient.MustBegin()
+	tx := sessions[sessionID].db.MustBegin()
 	for _, query := range queries {
 		_, err := tx.NamedExec(query.Sql, getParams(query))
 		if err != nil {
@@ -344,7 +327,7 @@ func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Que
 	}
 	tx.Commit()
 
-	_, err := dbClient.NamedExec(onSuccess.Sql, getParams(onSuccess))
+	_, err = sessions[sessionID].db.NamedExec(onSuccess.Sql, getParams(onSuccess))
 	if err != nil {
 		return "", fmt.Errorf("BatchExecute, onSuccess error: query: %s - %v", onSuccess.Sql, err)
 	}
@@ -449,14 +432,14 @@ func getParams(query *ongrid2.Query) map[string]interface{} {
 
 /* Auth func */
 
-func authMac(macAddr string) (string, *User, error) {
+func authMac(macAddr string) (string, error) {
 	var clientid int
 	var user User
 
 	err := dbOnGrid.QueryRowx("select userid from sys$workplaces where macaddr = ?", macAddr).Scan(&clientid)
 	if err != nil {
 		log.Printf("AuthMac: select userid from sys$workplaces: %v\n", err)
-		return "", nil, err
+		return "", err
 	}
 
 	if clientid != 0 {
@@ -464,14 +447,17 @@ func authMac(macAddr string) (string, *User, error) {
 		err = dbOnGrid.Get(&user, "select clientid, login, password, dbname from sys$auth where clientid = ?", clientid)
 		if err != nil {
 			log.Printf("AuthMac: select from sys$clients: %v\n", err)
-			return "", nil, err
+			return "", err
 		}
 
-		authToken := startSession(&user)
+		authToken, err := startSession(&user)
+		if err != nil {
+			return "", err
+		}
 
-		return authToken, &user, nil
+		return authToken, nil
 	}
-	return "", nil, fmt.Errorf("AuthMac failed. MacAddr: %s", macAddr)
+	return "", fmt.Errorf("AuthMac failed. MacAddr: %s", macAddr)
 }
 
 func authLP(login, password string) (string, *User, error) {
@@ -489,7 +475,10 @@ func authLP(login, password string) (string, *User, error) {
 	hpass := fmt.Sprintf("%x", h.Sum(nil))
 	if user.Password == hpass {
 		log.Println("Password correct")
-		authToken := startSession(&user)
+		authToken, err := startSession(&user)
+		if err != nil {
+			return "", nil, err
+		}
 		return authToken, &user, nil
 	} else {
 		log.Println("pass incorrect!")
@@ -498,31 +487,58 @@ func authLP(login, password string) (string, *User, error) {
 	return "", nil, fmt.Errorf("Auth failed. Login: %s", login)
 }
 
-func startSession(user *User) string {
+func startSession(user *User) (authToken string, err error) {
 	htoken := md5.New()
 	io.WriteString(htoken, user.Login)
 	io.WriteString(htoken, user.Password)
 	io.WriteString(htoken, time.Now().String())
 
-	authToken := fmt.Sprintf("%x", htoken.Sum(nil))
+	authToken = fmt.Sprintf("%x", htoken.Sum(nil))
 
-	dbOnGrid.MustExec("insert into sys$sessions (login,token,created_at,active) values ( ? , ? , ? , ? )", user.Login, authToken, time.Now(), 1)
+	var sessionID int
+	err = dbOnGrid.QueryRowx("select gen_id(gen_sys$sessions_id, 1) from rdb$database").Scan(&sessionID)
+	if err != nil {
+		return "", err
+	}
+	dbOnGrid.NamedExec("insert into sys$sessions (id, login, token, created_at, active) values (:id, :login, :token, :createdat, :active)",
+		map[string]interface{}{
+			"id":        sessionID,
+			"login":     user.Login,
+			"token":     authToken,
+			"createdat": time.Now(),
+			"active":    1,
+		})
 	log.Println("insert into sys$sessions complete..")
 
-	sessions[lastSessionID] = &Session{user: user}
-	log.Printf("Session id = %d", lastSessionID)
-	lastSessionID++
+	sessions[sessionID] = &Session{token: authToken, user: user}
+	log.Printf("Session id = %d", sessionID)
+	// Connect to client database
+	sessions[sessionID].db, err = sqlx.Connect("firebirdsql", user.DBName)
+	log.Printf("Client db: %s", user.DBName)
+	if err != nil {
+		log.Fatalln("Connect to client db: ", err)
+		return "", err
+	}
+	log.Println("Login: Client database connection established")
 
-	return authToken
+	return
 }
 
 // checkToken проверяет активность сессии и возвращает id сессии
-// TODO: хранить токен в памяти, чтобы перед каждым запросом не лезть в базу
 func checkToken(authToken string) (int, error) {
-	var sessionId int
-	err := dbOnGrid.QueryRowx("select id from sys$sessions where token = ? and active = 1", authToken).Scan(&sessionId)
+	//err := dbOnGrid.QueryRowx("select id from sys$sessions where token = ? and active = 1", authToken).Scan(&sessionId)
+	sessionID, err := getSessionIdByToken(authToken)
 	if err != nil {
 		return 0, fmt.Errorf("Token unknown: %v", err)
 	}
-	return sessionId, nil
+	return sessionID, nil
+}
+
+func getSessionIdByToken(token string) (int, error) {
+	for key, session := range sessions {
+		if session.token == token {
+			return key, nil
+		}
+	}
+	return 0, fmt.Errorf("Token not found")
 }
