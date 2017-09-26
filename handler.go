@@ -337,63 +337,57 @@ func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Que
 }
 
 /* Other function */
-type Request struct {
-	Id                int       `db:"ID"`
-	User              int       `db:"USER"`
-	Company           int       `db:"company"`
-	CreatedDateTime   time.Time `db:"CREATEDAT"`
-	DesiredDateTime   time.Time `db:"DESIREDAT"`
-	DesiredTimePeriod int       `db:"DESIREDTIME"`
-	Phone             string    `db:"PHONE"`
-	Email             string    `db:"EMAIL"`
-	Description       string    `db:"DESCRIPTION"`
-	Car               int       `db:"CAR"`
-	CheckInDateTime   time.Time `db:"CHECKIN"`
-	CheckOutDateTime  time.Time `db:"CHECKOUT"`
-	Status            int       `db:"STATUS"`
-	MasterInspector   string    `db:"MASTER"`
-}
 
 // TODO: возврат полного request'а
 func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.Event, err error) {
-	var event ongrid2.Event
-	var dbRequest Request
-	var request ongrid2.Request
 
 	if _, err = checkToken(authToken); err != nil {
 		return nil, err
 	}
 
-	rows, err := dbOnGrid.Queryx("select * from sys$requests where id > ?", last)
+	var createdAt time.Time
+	err = dbOnGrid.QueryRowx("select created_at from sys$events where id = ?", last).Scan(&createdAt)
 	if err != nil {
 		log.Printf("GetEvents: %v\n", err)
 		return
 	}
+	// пока считываем только реквесты (type = 1)
+	rows, err := dbOnGrid.Queryx("select * from sys$events where created_at > ? and type = 1", createdAt)
+	if err != nil {
+		log.Printf("GetEvents: %v\n", err)
+		return
+	}
+	defer rows.Close()
+
+	var dbEvent DBEvent
 	for rows.Next() {
-		err = rows.StructScan(&dbRequest)
+		err = rows.StructScan(&dbEvent)
 		if err != nil {
-			log.Printf("GetEvents: StructScan: %v\n", err)
+			log.Printf("GetEvents, StructScan: %v\n", err)
 		}
-		request.ID = int32(dbRequest.Id)
-		//request.User =
-		//request.Company =
-		request.CreatedDateTime = dbRequest.CreatedDateTime.Unix()
-		request.DesiredDateTime = dbRequest.DesiredDateTime.Unix()
-		request.DesiredTimePeriod = int32(dbRequest.DesiredTimePeriod)
-		request.Phone = dbRequest.Phone
-		request.Email = dbRequest.Email
-		request.Description = dbRequest.Description
-		//request.Car = 1
-		request.CheckInDateTime = dbRequest.CheckInDateTime.Unix()
-		request.CheckOutDateTime = dbRequest.CheckOutDateTime.Unix()
-		request.Status = ongrid2.RequestStatus(dbRequest.Status)
-		request.MasterInspector = dbRequest.MasterInspector
 
-		event.ID = fmt.Sprintf("%d", dbRequest.Id)
-		event.Type = ongrid2.EventType_REQUEST
-		event.Request = &request
+		rowsRq, err := dbOnGrid.Queryx("select * from sys$requests where id = ?", dbEvent.ObjectId)
+		if err != nil {
+			log.Printf("GetEvents: %v\n", err)
+			return nil, err
+		}
+		defer rowsRq.Close()
 
-		events = append(events, &event)
+		var dbRequest DBRequest
+		for rowsRq.Next() {
+			err = rowsRq.StructScan(&dbRequest)
+			if err != nil {
+				log.Printf("GetEvents, StructScan: %v\n", err)
+			}
+			event := ongrid2.Event{}
+
+			event.ID = dbEvent.Id
+			event.Type = 1
+			event.Request, err = getRequest(dbEvent.ObjectId)
+
+			events = append(events, &event)
+		}
+
 	}
 
 	return
@@ -402,6 +396,90 @@ func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.
 // PostEvent create or update event in backend
 func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) error {
 	if _, err := checkToken(authToken); err != nil {
+		return err
+	}
+
+	if event.Type != ongrid2.EventType_REQUEST {
+		return nil
+	}
+	
+	request := event.Request
+
+	var objectID int
+	err := dbOnGrid.QueryRowx("select id from sys$requests where id = ?", request.ID).Scan(&objectID)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+
+		} else {
+			log.Printf("PostEvent, select id from sys$requests error: %v", err)
+			return err
+		}
+	}
+
+	if objectID == 0 {
+		err = dbOnGrid.QueryRowx("select gen_id(gen_sys$requests_id from rdb$database").Scan(&objectID)
+		if err != nil {
+			log.Printf("PostEvent, select gen_id error: %v", err)
+			return err
+		}
+
+		_, err := dbOnGrid.NamedExec("insert into sys$requests (id, userid, company, createddatetime, desireddatetime, desiredtimeperiod, phone, email, description, car, status) "+
+			"values (:id, :user, :company, :createdat, :desired, :desiredperiod, :phone, :email, :descr, :car, :status)",
+			map[string]interface{}{
+				"id":            objectID,
+				"user":          request.User.ID,
+				"company":       request.Company.ID,
+				"createdat":     time.Unix(request.CreatedDateTime, 0),
+				"desired":       time.Unix(request.DesiredDateTime, 0),
+				"desiredperiod": request.DesiredTimePeriod,
+				"phone":         request.Phone,
+				"email":         request.Email,
+				"descr":         request.Description,
+				"car":           request.Car.ID,
+				"status":        request.Status,
+			})
+		if err != nil {
+			log.Printf("PostEvent, insert into sys$requests error: %v", err)
+			return err
+		}
+	} else {
+		_, err = dbOnGrid.NamedExec("update sys$requests set userid = :user, company = :comapny, createddatetime = :createdat, desireddatetime = :desired, "+
+		"desiredtimeperiod = :desiredperiod, phone = :phone, email = :email, description = :descr, car = :car, status = :status where id = :reqid",
+		map[string]interface{}{
+			"user":          request.User.ID,
+			"company":       request.Company.ID,
+			"createdat":     time.Unix(request.CreatedDateTime, 0),
+			"desired":       time.Unix(request.DesiredDateTime, 0),
+			"desiredperiod": request.DesiredTimePeriod,
+			"phone":         request.Phone,
+			"email":         request.Email,
+			"descr":         request.Description,
+			"car":           request.Car.ID,
+			"status":        request.Status,
+			"reqid":         objectID,
+		})
+		if err != nil {
+			log.Printf("PostEvent, update sys$requests error: %v", err)
+			return err
+		}
+	}
+
+	var hexUUID string
+	err = dbOnGrid.QueryRowx("select hex_uuid from get_hex_uuid").Scan(&hexUUID)
+	if err != nil {
+		log.Printf("select hex_uuid from get_hex_uuid error: %v", err)
+		return err
+	}
+	log.Printf("New UUID: %s", hexUUID)
+
+	_, err = dbOnGrid.NamedExec("insert into sys$events (id, type, objectid) values (:id, :type, :objid)",
+		map[string]interface{}{
+			"id":    hexUUID,
+			"type":  1,
+			"objid": objectID,
+		})
+	if err != nil {
+		log.Printf("PostEvent, insert into sys$events error: %v", err)
 		return err
 	}
 

@@ -3,9 +3,9 @@ package main
 import (
 	"database/sql"
 	"database/sql/driver"
-	"time"
 	"log"
 	"ongrid-thrift/ongrid2"
+	"time"
 )
 
 type DBAuth struct {
@@ -92,6 +92,13 @@ type DBCompany struct {
 	RealAddress          sql.NullString `db:"REALADDRESS"`
 }
 
+type DBEvent struct {
+	Id        string    `db:"ID"`
+	EventType int       `db:"TYPE"`
+	ObjectId  int       `db:"OBJECTID"`
+	CreatedAt time.Time `db:"CREATED_AT"`
+}
+
 type NullTime struct {
 	Time  time.Time
 	Valid bool // Valid is true if Time is not NULL
@@ -115,9 +122,9 @@ func getClient(clientId int) (*ongrid2.Client, error) {
 	client := ongrid2.Client{}
 	var dbClient DBClient
 
-	err := db.Get(&dbClient, "select id, email, name, accounttype, clienttype, registrationdate, phone, person, company from sys$clients where id = ?", clientId)
+	err := dbOnGrid.Get(&dbClient, "select id, email, name, accounttype, clienttype, registrationdate, phone, person, company from sys$clients where id = ?", clientId)
 	if err != nil {
-		log.Printf("db.Get from sys$client error: %v", err)
+		log.Printf("dbOnGrid.Get from sys$client error: %v", err)
 		return nil, err
 	}
 
@@ -143,7 +150,7 @@ func getClient(clientId int) (*ongrid2.Client, error) {
 func getClients() ([]*ongrid2.Client, error) {
 	var clients []*ongrid2.Client
 
-	rows, err := db.Queryx("select id from sys$clients")
+	rows, err := dbOnGrid.Queryx("select id from sys$clients")
 	if err != nil {
 		return nil, err
 	}
@@ -166,12 +173,11 @@ func getClients() ([]*ongrid2.Client, error) {
 	return clients, nil
 }
 
-
 func getPerson(personId int64) *ongrid2.Person {
 	person := ongrid2.Person{}
 	var dbPerson DBPerson
 
-	err := db.Get(&dbPerson, "select * from sys$person where id = ?", personId)
+	err := dbOnGrid.Get(&dbPerson, "select * from sys$person where id = ?", personId)
 	if err != nil {
 		log.Printf("db.Get from sys$person error: %v", err)
 	}
@@ -193,7 +199,7 @@ func getCompany(companyId int64) *ongrid2.Company {
 	company := ongrid2.Company{}
 	var dbCompany DBCompany
 
-	err := db.Get(&dbCompany, "select * from sys$companies where id = ?", companyId)
+	err := dbOnGrid.Get(&dbCompany, "select * from sys$companies where id = ?", companyId)
 	if err != nil {
 		log.Printf("db.Get from sys$companies error: %v", err)
 	}
@@ -221,7 +227,7 @@ func getCar(carId int) (*ongrid2.Car, error) {
 	car := ongrid2.Car{}
 	var dbCar DBCar
 
-	err := db.Get(&dbCar, "select * from sys$cars where id = ?", carId)
+	err := dbOnGrid.Get(&dbCar, "select * from sys$cars where id = ?", carId)
 	if err != nil {
 		log.Printf("db.Get from sys$cars error: %v", err)
 		return nil, err
@@ -252,7 +258,7 @@ func getCar(carId int) (*ongrid2.Car, error) {
 func getCars() ([]*ongrid2.Car, error) {
 	var cars []*ongrid2.Car
 
-	rows, err := db.Queryx("select id from sys$cars")
+	rows, err := dbOnGrid.Queryx("select id from sys$cars")
 	if err != nil {
 		return nil, err
 	}
@@ -275,12 +281,11 @@ func getCars() ([]*ongrid2.Car, error) {
 	return cars, nil
 }
 
-
 func getRequest(requestId int) (*ongrid2.Request, error) {
 	request := ongrid2.Request{}
 	var dbRequest DBRequest
 
-	err := db.Get(&dbRequest, "select * from sys$requests where id = ?", requestId)
+	err := dbOnGrid.Get(&dbRequest, "select * from sys$requests where id = ?", requestId)
 	if err != nil {
 		log.Printf("db.Get from sys$cars error: %v", err)
 		return nil, err
@@ -315,4 +320,3 @@ func getRequest(requestId int) (*ongrid2.Request, error) {
 
 	return &request, nil
 }
-
