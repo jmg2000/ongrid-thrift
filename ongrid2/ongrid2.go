@@ -4368,6 +4368,1336 @@ func (p *Event) String() string {
   return fmt.Sprintf("Event(%+v)", *p)
 }
 
+// Attributes:
+//  - Host
+//  - Port
+//  - Secret
+type CentrifugoConf struct {
+  Host string `thrift:"host,1" db:"host" json:"host"`
+  Port int64 `thrift:"port,2" db:"port" json:"port"`
+  Secret string `thrift:"secret,3" db:"secret" json:"secret"`
+}
+
+func NewCentrifugoConf() *CentrifugoConf {
+  return &CentrifugoConf{}
+}
+
+
+func (p *CentrifugoConf) GetHost() string {
+  return p.Host
+}
+
+func (p *CentrifugoConf) GetPort() int64 {
+  return p.Port
+}
+
+func (p *CentrifugoConf) GetSecret() string {
+  return p.Secret
+}
+func (p *CentrifugoConf) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *CentrifugoConf)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.Host = v
+}
+  return nil
+}
+
+func (p *CentrifugoConf)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.Port = v
+}
+  return nil
+}
+
+func (p *CentrifugoConf)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Secret = v
+}
+  return nil
+}
+
+func (p *CentrifugoConf) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("CentrifugoConf"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *CentrifugoConf) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("host", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:host: ", p), err) }
+  if err := oprot.WriteString(string(p.Host)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.host (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:host: ", p), err) }
+  return err
+}
+
+func (p *CentrifugoConf) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("port", thrift.I64, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:port: ", p), err) }
+  if err := oprot.WriteI64(int64(p.Port)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.port (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:port: ", p), err) }
+  return err
+}
+
+func (p *CentrifugoConf) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("secret", thrift.STRING, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:secret: ", p), err) }
+  if err := oprot.WriteString(string(p.Secret)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.secret (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:secret: ", p), err) }
+  return err
+}
+
+func (p *CentrifugoConf) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("CentrifugoConf(%+v)", *p)
+}
+
+// Attributes:
+//  - ID
+//  - ObjectId
+//  - UserId
+//  - ObjectVisible
+//  - ObjectReadonly
+//  - ObjectCreate
+//  - ObjectEdit
+//  - ObjectDelete
+//  - ObjectValue
+type ConfigPermission struct {
+  ID int64 `thrift:"id,1" db:"id" json:"id"`
+  ObjectId int64 `thrift:"objectId,2" db:"objectId" json:"objectId"`
+  UserId int64 `thrift:"userId,3" db:"userId" json:"userId"`
+  ObjectVisible bool `thrift:"objectVisible,4" db:"objectVisible" json:"objectVisible"`
+  ObjectReadonly bool `thrift:"objectReadonly,5" db:"objectReadonly" json:"objectReadonly"`
+  ObjectCreate bool `thrift:"objectCreate,6" db:"objectCreate" json:"objectCreate"`
+  ObjectEdit bool `thrift:"objectEdit,7" db:"objectEdit" json:"objectEdit"`
+  ObjectDelete bool `thrift:"objectDelete,8" db:"objectDelete" json:"objectDelete"`
+  ObjectValue string `thrift:"objectValue,9" db:"objectValue" json:"objectValue"`
+}
+
+func NewConfigPermission() *ConfigPermission {
+  return &ConfigPermission{}
+}
+
+
+func (p *ConfigPermission) GetID() int64 {
+  return p.ID
+}
+
+func (p *ConfigPermission) GetObjectId() int64 {
+  return p.ObjectId
+}
+
+func (p *ConfigPermission) GetUserId() int64 {
+  return p.UserId
+}
+
+func (p *ConfigPermission) GetObjectVisible() bool {
+  return p.ObjectVisible
+}
+
+func (p *ConfigPermission) GetObjectReadonly() bool {
+  return p.ObjectReadonly
+}
+
+func (p *ConfigPermission) GetObjectCreate() bool {
+  return p.ObjectCreate
+}
+
+func (p *ConfigPermission) GetObjectEdit() bool {
+  return p.ObjectEdit
+}
+
+func (p *ConfigPermission) GetObjectDelete() bool {
+  return p.ObjectDelete
+}
+
+func (p *ConfigPermission) GetObjectValue() string {
+  return p.ObjectValue
+}
+func (p *ConfigPermission) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    case 4:
+      if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
+    case 5:
+      if err := p.ReadField5(iprot); err != nil {
+        return err
+      }
+    case 6:
+      if err := p.ReadField6(iprot); err != nil {
+        return err
+      }
+    case 7:
+      if err := p.ReadField7(iprot); err != nil {
+        return err
+      }
+    case 8:
+      if err := p.ReadField8(iprot); err != nil {
+        return err
+      }
+    case 9:
+      if err := p.ReadField9(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.ID = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.ObjectId = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.UserId = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField4(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 4: ", err)
+} else {
+  p.ObjectVisible = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField5(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 5: ", err)
+} else {
+  p.ObjectReadonly = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField6(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 6: ", err)
+} else {
+  p.ObjectCreate = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField7(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 7: ", err)
+} else {
+  p.ObjectEdit = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField8(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 8: ", err)
+} else {
+  p.ObjectDelete = v
+}
+  return nil
+}
+
+func (p *ConfigPermission)  ReadField9(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 9: ", err)
+} else {
+  p.ObjectValue = v
+}
+  return nil
+}
+
+func (p *ConfigPermission) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("ConfigPermission"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+    if err := p.writeField4(oprot); err != nil { return err }
+    if err := p.writeField5(oprot); err != nil { return err }
+    if err := p.writeField6(oprot); err != nil { return err }
+    if err := p.writeField7(oprot); err != nil { return err }
+    if err := p.writeField8(oprot); err != nil { return err }
+    if err := p.writeField9(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *ConfigPermission) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("id", thrift.I64, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:id: ", p), err) }
+  if err := oprot.WriteI64(int64(p.ID)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.id (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:id: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectId", thrift.I64, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:objectId: ", p), err) }
+  if err := oprot.WriteI64(int64(p.ObjectId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectId (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:objectId: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("userId", thrift.I64, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:userId: ", p), err) }
+  if err := oprot.WriteI64(int64(p.UserId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.userId (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:userId: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField4(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectVisible", thrift.BOOL, 4); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:objectVisible: ", p), err) }
+  if err := oprot.WriteBool(bool(p.ObjectVisible)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectVisible (4) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:objectVisible: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField5(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectReadonly", thrift.BOOL, 5); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:objectReadonly: ", p), err) }
+  if err := oprot.WriteBool(bool(p.ObjectReadonly)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectReadonly (5) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 5:objectReadonly: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField6(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectCreate", thrift.BOOL, 6); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:objectCreate: ", p), err) }
+  if err := oprot.WriteBool(bool(p.ObjectCreate)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectCreate (6) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 6:objectCreate: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField7(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectEdit", thrift.BOOL, 7); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 7:objectEdit: ", p), err) }
+  if err := oprot.WriteBool(bool(p.ObjectEdit)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectEdit (7) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 7:objectEdit: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField8(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectDelete", thrift.BOOL, 8); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 8:objectDelete: ", p), err) }
+  if err := oprot.WriteBool(bool(p.ObjectDelete)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectDelete (8) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 8:objectDelete: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) writeField9(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectValue", thrift.STRING, 9); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 9:objectValue: ", p), err) }
+  if err := oprot.WriteString(string(p.ObjectValue)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectValue (9) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 9:objectValue: ", p), err) }
+  return err
+}
+
+func (p *ConfigPermission) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("ConfigPermission(%+v)", *p)
+}
+
+// Attributes:
+//  - ID
+//  - Type
+//  - Name
+//  - Description
+//  - Subtype
+//  - Props
+//  - Events
+//  - Objects
+//  - Value
+//  - Tag
+//  - Permission
+//  - Updated
+type ConfigObject struct {
+  ID int64 `thrift:"id,1" db:"id" json:"id"`
+  Type int32 `thrift:"type,2" db:"type" json:"type"`
+  Name string `thrift:"name,3" db:"name" json:"name"`
+  Description string `thrift:"description,4" db:"description" json:"description"`
+  Subtype int32 `thrift:"subtype,5" db:"subtype" json:"subtype"`
+  Props []*ConfigObject `thrift:"props,6" db:"props" json:"props,omitempty"`
+  Events []*ConfigObject `thrift:"events,7" db:"events" json:"events,omitempty"`
+  Objects []*ConfigObject `thrift:"objects,8" db:"objects" json:"objects,omitempty"`
+  Value string `thrift:"value,9" db:"value" json:"value"`
+  Tag int32 `thrift:"tag,10" db:"tag" json:"tag"`
+  Permission *ConfigPermission `thrift:"permission,11" db:"permission" json:"permission,omitempty"`
+  Updated bool `thrift:"updated,12" db:"updated" json:"updated"`
+}
+
+func NewConfigObject() *ConfigObject {
+  return &ConfigObject{}
+}
+
+
+func (p *ConfigObject) GetID() int64 {
+  return p.ID
+}
+
+func (p *ConfigObject) GetType() int32 {
+  return p.Type
+}
+
+func (p *ConfigObject) GetName() string {
+  return p.Name
+}
+
+func (p *ConfigObject) GetDescription() string {
+  return p.Description
+}
+
+func (p *ConfigObject) GetSubtype() int32 {
+  return p.Subtype
+}
+var ConfigObject_Props_DEFAULT []*ConfigObject
+
+func (p *ConfigObject) GetProps() []*ConfigObject {
+  return p.Props
+}
+var ConfigObject_Events_DEFAULT []*ConfigObject
+
+func (p *ConfigObject) GetEvents() []*ConfigObject {
+  return p.Events
+}
+var ConfigObject_Objects_DEFAULT []*ConfigObject
+
+func (p *ConfigObject) GetObjects() []*ConfigObject {
+  return p.Objects
+}
+
+func (p *ConfigObject) GetValue() string {
+  return p.Value
+}
+
+func (p *ConfigObject) GetTag() int32 {
+  return p.Tag
+}
+var ConfigObject_Permission_DEFAULT *ConfigPermission
+func (p *ConfigObject) GetPermission() *ConfigPermission {
+  if !p.IsSetPermission() {
+    return ConfigObject_Permission_DEFAULT
+  }
+return p.Permission
+}
+
+func (p *ConfigObject) GetUpdated() bool {
+  return p.Updated
+}
+func (p *ConfigObject) IsSetProps() bool {
+  return p.Props != nil
+}
+
+func (p *ConfigObject) IsSetEvents() bool {
+  return p.Events != nil
+}
+
+func (p *ConfigObject) IsSetObjects() bool {
+  return p.Objects != nil
+}
+
+func (p *ConfigObject) IsSetPermission() bool {
+  return p.Permission != nil
+}
+
+func (p *ConfigObject) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    case 4:
+      if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
+    case 5:
+      if err := p.ReadField5(iprot); err != nil {
+        return err
+      }
+    case 6:
+      if err := p.ReadField6(iprot); err != nil {
+        return err
+      }
+    case 7:
+      if err := p.ReadField7(iprot); err != nil {
+        return err
+      }
+    case 8:
+      if err := p.ReadField8(iprot); err != nil {
+        return err
+      }
+    case 9:
+      if err := p.ReadField9(iprot); err != nil {
+        return err
+      }
+    case 10:
+      if err := p.ReadField10(iprot); err != nil {
+        return err
+      }
+    case 11:
+      if err := p.ReadField11(iprot); err != nil {
+        return err
+      }
+    case 12:
+      if err := p.ReadField12(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *ConfigObject)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.ID = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.Type = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Name = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField4(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 4: ", err)
+} else {
+  p.Description = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField5(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 5: ", err)
+} else {
+  p.Subtype = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField6(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*ConfigObject, 0, size)
+  p.Props =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem4 := &ConfigObject{}
+    if err := _elem4.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem4), err)
+    }
+    p.Props = append(p.Props, _elem4)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *ConfigObject)  ReadField7(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*ConfigObject, 0, size)
+  p.Events =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem5 := &ConfigObject{}
+    if err := _elem5.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem5), err)
+    }
+    p.Events = append(p.Events, _elem5)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *ConfigObject)  ReadField8(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*ConfigObject, 0, size)
+  p.Objects =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem6 := &ConfigObject{}
+    if err := _elem6.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem6), err)
+    }
+    p.Objects = append(p.Objects, _elem6)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *ConfigObject)  ReadField9(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 9: ", err)
+} else {
+  p.Value = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField10(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 10: ", err)
+} else {
+  p.Tag = v
+}
+  return nil
+}
+
+func (p *ConfigObject)  ReadField11(iprot thrift.TProtocol) error {
+  p.Permission = &ConfigPermission{}
+  if err := p.Permission.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Permission), err)
+  }
+  return nil
+}
+
+func (p *ConfigObject)  ReadField12(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 12: ", err)
+} else {
+  p.Updated = v
+}
+  return nil
+}
+
+func (p *ConfigObject) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("ConfigObject"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+    if err := p.writeField4(oprot); err != nil { return err }
+    if err := p.writeField5(oprot); err != nil { return err }
+    if err := p.writeField6(oprot); err != nil { return err }
+    if err := p.writeField7(oprot); err != nil { return err }
+    if err := p.writeField8(oprot); err != nil { return err }
+    if err := p.writeField9(oprot); err != nil { return err }
+    if err := p.writeField10(oprot); err != nil { return err }
+    if err := p.writeField11(oprot); err != nil { return err }
+    if err := p.writeField12(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *ConfigObject) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("id", thrift.I64, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:id: ", p), err) }
+  if err := oprot.WriteI64(int64(p.ID)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.id (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:id: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("type", thrift.I32, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:type: ", p), err) }
+  if err := oprot.WriteI32(int32(p.Type)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.type (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:type: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("name", thrift.STRING, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:name: ", p), err) }
+  if err := oprot.WriteString(string(p.Name)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.name (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:name: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField4(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("description", thrift.STRING, 4); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:description: ", p), err) }
+  if err := oprot.WriteString(string(p.Description)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.description (4) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:description: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField5(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("subtype", thrift.I32, 5); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:subtype: ", p), err) }
+  if err := oprot.WriteI32(int32(p.Subtype)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.subtype (5) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 5:subtype: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField6(oprot thrift.TProtocol) (err error) {
+  if p.IsSetProps() {
+    if err := oprot.WriteFieldBegin("props", thrift.LIST, 6); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:props: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Props)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Props {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 6:props: ", p), err) }
+  }
+  return err
+}
+
+func (p *ConfigObject) writeField7(oprot thrift.TProtocol) (err error) {
+  if p.IsSetEvents() {
+    if err := oprot.WriteFieldBegin("events", thrift.LIST, 7); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 7:events: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Events)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Events {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 7:events: ", p), err) }
+  }
+  return err
+}
+
+func (p *ConfigObject) writeField8(oprot thrift.TProtocol) (err error) {
+  if p.IsSetObjects() {
+    if err := oprot.WriteFieldBegin("objects", thrift.LIST, 8); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 8:objects: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Objects)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Objects {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 8:objects: ", p), err) }
+  }
+  return err
+}
+
+func (p *ConfigObject) writeField9(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("value", thrift.STRING, 9); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 9:value: ", p), err) }
+  if err := oprot.WriteString(string(p.Value)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.value (9) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 9:value: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField10(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("tag", thrift.I32, 10); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 10:tag: ", p), err) }
+  if err := oprot.WriteI32(int32(p.Tag)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.tag (10) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 10:tag: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) writeField11(oprot thrift.TProtocol) (err error) {
+  if p.IsSetPermission() {
+    if err := oprot.WriteFieldBegin("permission", thrift.STRUCT, 11); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 11:permission: ", p), err) }
+    if err := p.Permission.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Permission), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 11:permission: ", p), err) }
+  }
+  return err
+}
+
+func (p *ConfigObject) writeField12(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("updated", thrift.BOOL, 12); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 12:updated: ", p), err) }
+  if err := oprot.WriteBool(bool(p.Updated)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.updated (12) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 12:updated: ", p), err) }
+  return err
+}
+
+func (p *ConfigObject) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("ConfigObject(%+v)", *p)
+}
+
+// Attributes:
+//  - ID
+//  - ObjectType
+//  - ParamType
+//  - PropType
+//  - PName
+//  - PCaption
+//  - PType
+//  - PValues
+//  - PDefault
+//  - PAction
+type ConfigProp struct {
+  ID int64 `thrift:"id,1" db:"id" json:"id"`
+  ObjectType int32 `thrift:"objectType,2" db:"objectType" json:"objectType"`
+  ParamType int32 `thrift:"paramType,3" db:"paramType" json:"paramType"`
+  PropType int32 `thrift:"propType,4" db:"propType" json:"propType"`
+  PName string `thrift:"pName,5" db:"pName" json:"pName"`
+  PCaption string `thrift:"pCaption,6" db:"pCaption" json:"pCaption"`
+  PType int32 `thrift:"pType,7" db:"pType" json:"pType"`
+  PValues string `thrift:"pValues,8" db:"pValues" json:"pValues"`
+  PDefault string `thrift:"pDefault,9" db:"pDefault" json:"pDefault"`
+  PAction int32 `thrift:"pAction,10" db:"pAction" json:"pAction"`
+}
+
+func NewConfigProp() *ConfigProp {
+  return &ConfigProp{}
+}
+
+
+func (p *ConfigProp) GetID() int64 {
+  return p.ID
+}
+
+func (p *ConfigProp) GetObjectType() int32 {
+  return p.ObjectType
+}
+
+func (p *ConfigProp) GetParamType() int32 {
+  return p.ParamType
+}
+
+func (p *ConfigProp) GetPropType() int32 {
+  return p.PropType
+}
+
+func (p *ConfigProp) GetPName() string {
+  return p.PName
+}
+
+func (p *ConfigProp) GetPCaption() string {
+  return p.PCaption
+}
+
+func (p *ConfigProp) GetPType() int32 {
+  return p.PType
+}
+
+func (p *ConfigProp) GetPValues() string {
+  return p.PValues
+}
+
+func (p *ConfigProp) GetPDefault() string {
+  return p.PDefault
+}
+
+func (p *ConfigProp) GetPAction() int32 {
+  return p.PAction
+}
+func (p *ConfigProp) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    case 4:
+      if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
+    case 5:
+      if err := p.ReadField5(iprot); err != nil {
+        return err
+      }
+    case 6:
+      if err := p.ReadField6(iprot); err != nil {
+        return err
+      }
+    case 7:
+      if err := p.ReadField7(iprot); err != nil {
+        return err
+      }
+    case 8:
+      if err := p.ReadField8(iprot); err != nil {
+        return err
+      }
+    case 9:
+      if err := p.ReadField9(iprot); err != nil {
+        return err
+      }
+    case 10:
+      if err := p.ReadField10(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *ConfigProp)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.ID = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.ObjectType = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.ParamType = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField4(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 4: ", err)
+} else {
+  p.PropType = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField5(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 5: ", err)
+} else {
+  p.PName = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField6(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 6: ", err)
+} else {
+  p.PCaption = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField7(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 7: ", err)
+} else {
+  p.PType = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField8(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 8: ", err)
+} else {
+  p.PValues = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField9(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 9: ", err)
+} else {
+  p.PDefault = v
+}
+  return nil
+}
+
+func (p *ConfigProp)  ReadField10(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI32(); err != nil {
+  return thrift.PrependError("error reading field 10: ", err)
+} else {
+  p.PAction = v
+}
+  return nil
+}
+
+func (p *ConfigProp) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("ConfigProp"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+    if err := p.writeField4(oprot); err != nil { return err }
+    if err := p.writeField5(oprot); err != nil { return err }
+    if err := p.writeField6(oprot); err != nil { return err }
+    if err := p.writeField7(oprot); err != nil { return err }
+    if err := p.writeField8(oprot); err != nil { return err }
+    if err := p.writeField9(oprot); err != nil { return err }
+    if err := p.writeField10(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *ConfigProp) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("id", thrift.I64, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:id: ", p), err) }
+  if err := oprot.WriteI64(int64(p.ID)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.id (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:id: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("objectType", thrift.I32, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:objectType: ", p), err) }
+  if err := oprot.WriteI32(int32(p.ObjectType)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.objectType (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:objectType: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("paramType", thrift.I32, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:paramType: ", p), err) }
+  if err := oprot.WriteI32(int32(p.ParamType)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.paramType (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:paramType: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField4(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("propType", thrift.I32, 4); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:propType: ", p), err) }
+  if err := oprot.WriteI32(int32(p.PropType)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.propType (4) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:propType: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField5(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("pName", thrift.STRING, 5); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:pName: ", p), err) }
+  if err := oprot.WriteString(string(p.PName)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.pName (5) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 5:pName: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField6(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("pCaption", thrift.STRING, 6); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:pCaption: ", p), err) }
+  if err := oprot.WriteString(string(p.PCaption)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.pCaption (6) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 6:pCaption: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField7(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("pType", thrift.I32, 7); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 7:pType: ", p), err) }
+  if err := oprot.WriteI32(int32(p.PType)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.pType (7) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 7:pType: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField8(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("pValues", thrift.STRING, 8); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 8:pValues: ", p), err) }
+  if err := oprot.WriteString(string(p.PValues)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.pValues (8) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 8:pValues: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField9(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("pDefault", thrift.STRING, 9); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 9:pDefault: ", p), err) }
+  if err := oprot.WriteString(string(p.PDefault)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.pDefault (9) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 9:pDefault: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) writeField10(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("pAction", thrift.I32, 10); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 10:pAction: ", p), err) }
+  if err := oprot.WriteI32(int32(p.PAction)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.pAction (10) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 10:pAction: ", p), err) }
+  return err
+}
+
+func (p *ConfigProp) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("ConfigProp(%+v)", *p)
+}
+
 // Structs can also be exceptions, if they are nasty.
 // 
 // Attributes:
@@ -4842,7 +6172,25 @@ type Intergrid interface {  //Ahh, now onto the cool part, defining a service. S
   // Parameters:
   //  - AuthToken
   //  - Event
-  PostEvent(authToken string, event *Event) (err error)
+  PostEvent(authToken string, event *Event) (r string, err error)
+  // Parameters:
+  //  - AuthToken
+  GetCentrifugoConf(authToken string) (r *CentrifugoConf, err error)
+  // Parameters:
+  //  - AuthToken
+  //  - UserId
+  GetConfiguration(authToken string, userId int64) (r *ConfigObject, err error)
+  // Parameters:
+  //  - AuthToken
+  GetProps(authToken string) (r []*ConfigProp, err error)
+  // Parameters:
+  //  - AuthToken
+  //  - UserId
+  GetPermissions(authToken string, userId int64) (r []*ConfigPermission, err error)
+  // Parameters:
+  //  - AuthToken
+  //  - Permission
+  SetPermission(authToken string, permission *ConfigPermission) (err error)
   Ping() (err error)
   // This method has a oneway modifier. That means the client only makes
   // a request and does not listen for any response at all. Oneway methods
@@ -4932,16 +6280,16 @@ func (p *IntergridClient) recvLogin() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error4 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error5 error
-    error5, err = error4.Read(iprot)
+    error7 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error8 error
+    error8, err = error7.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error5
+    err = error8
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5012,16 +6360,16 @@ func (p *IntergridClient) recvLogout() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error6 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error7 error
-    error7, err = error6.Read(iprot)
+    error9 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error10 error
+    error10, err = error9.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error7
+    err = error10
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5093,16 +6441,16 @@ func (p *IntergridClient) recvAddWorkPlace() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error8 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error9 error
-    error9, err = error8.Read(iprot)
+    error11 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error12 error
+    error12, err = error11.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error9
+    err = error12
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5175,16 +6523,16 @@ func (p *IntergridClient) recvExecuteSelectQuery() (value *DataRowSet, err error
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error10 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error11 error
-    error11, err = error10.Read(iprot)
+    error13 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error14 error
+    error14, err = error13.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error11
+    err = error14
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5260,16 +6608,16 @@ func (p *IntergridClient) recvExecuteNonSelectQuery() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error12 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error13 error
-    error13, err = error12.Read(iprot)
+    error15 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error16 error
+    error16, err = error15.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error13
+    err = error16
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5342,16 +6690,16 @@ func (p *IntergridClient) recvStartBatchExecution() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error14 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error15 error
-    error15, err = error14.Read(iprot)
+    error17 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error18 error
+    error18, err = error17.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error15
+    err = error18
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5429,16 +6777,16 @@ func (p *IntergridClient) recvAddQuery() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error16 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error17 error
-    error17, err = error16.Read(iprot)
+    error19 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error20 error
+    error20, err = error19.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error17
+    err = error20
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5517,16 +6865,16 @@ func (p *IntergridClient) recvFinishBatchExecution() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error18 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error19 error
-    error19, err = error18.Read(iprot)
+    error21 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error22 error
+    error22, err = error21.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error19
+    err = error22
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5606,16 +6954,16 @@ func (p *IntergridClient) recvBatchExecute() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error20 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error21 error
-    error21, err = error20.Read(iprot)
+    error23 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error24 error
+    error24, err = error23.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error21
+    err = error24
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5691,16 +7039,16 @@ func (p *IntergridClient) recvGetEvents() (value []*Event, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error22 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error23 error
-    error23, err = error22.Read(iprot)
+    error25 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error26 error
+    error26, err = error25.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error23
+    err = error26
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5725,7 +7073,7 @@ func (p *IntergridClient) recvGetEvents() (value []*Event, err error) {
 // Parameters:
 //  - AuthToken
 //  - Event
-func (p *IntergridClient) PostEvent(authToken string, event *Event) (err error) {
+func (p *IntergridClient) PostEvent(authToken string, event *Event) (r string, err error) {
   if err = p.sendPostEvent(authToken, event); err != nil { return }
   return p.recvPostEvent()
 }
@@ -5754,7 +7102,7 @@ func (p *IntergridClient) sendPostEvent(authToken string, event *Event)(err erro
 }
 
 
-func (p *IntergridClient) recvPostEvent() (err error) {
+func (p *IntergridClient) recvPostEvent() (value string, err error) {
   iprot := p.InputProtocol
   if iprot == nil {
     iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -5773,16 +7121,16 @@ func (p *IntergridClient) recvPostEvent() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error24 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error25 error
-    error25, err = error24.Read(iprot)
+    error27 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error28 error
+    error28, err = error27.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error25
+    err = error28
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5790,6 +7138,412 @@ func (p *IntergridClient) recvPostEvent() (err error) {
     return
   }
   result := IntergridPostEventResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
+// Parameters:
+//  - AuthToken
+func (p *IntergridClient) GetCentrifugoConf(authToken string) (r *CentrifugoConf, err error) {
+  if err = p.sendGetCentrifugoConf(authToken); err != nil { return }
+  return p.recvGetCentrifugoConf()
+}
+
+func (p *IntergridClient) sendGetCentrifugoConf(authToken string)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("getCentrifugoConf", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := IntergridGetCentrifugoConfArgs{
+  AuthToken : authToken,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *IntergridClient) recvGetCentrifugoConf() (value *CentrifugoConf, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "getCentrifugoConf" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getCentrifugoConf failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getCentrifugoConf failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error29 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error30 error
+    error30, err = error29.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error30
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getCentrifugoConf failed: invalid message type")
+    return
+  }
+  result := IntergridGetCentrifugoConfResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
+// Parameters:
+//  - AuthToken
+//  - UserId
+func (p *IntergridClient) GetConfiguration(authToken string, userId int64) (r *ConfigObject, err error) {
+  if err = p.sendGetConfiguration(authToken, userId); err != nil { return }
+  return p.recvGetConfiguration()
+}
+
+func (p *IntergridClient) sendGetConfiguration(authToken string, userId int64)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("getConfiguration", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := IntergridGetConfigurationArgs{
+  AuthToken : authToken,
+  UserId : userId,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *IntergridClient) recvGetConfiguration() (value *ConfigObject, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "getConfiguration" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getConfiguration failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getConfiguration failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error31 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error32 error
+    error32, err = error31.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error32
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getConfiguration failed: invalid message type")
+    return
+  }
+  result := IntergridGetConfigurationResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
+// Parameters:
+//  - AuthToken
+func (p *IntergridClient) GetProps(authToken string) (r []*ConfigProp, err error) {
+  if err = p.sendGetProps(authToken); err != nil { return }
+  return p.recvGetProps()
+}
+
+func (p *IntergridClient) sendGetProps(authToken string)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("getProps", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := IntergridGetPropsArgs{
+  AuthToken : authToken,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *IntergridClient) recvGetProps() (value []*ConfigProp, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "getProps" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getProps failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getProps failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error33 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error34 error
+    error34, err = error33.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error34
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getProps failed: invalid message type")
+    return
+  }
+  result := IntergridGetPropsResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
+// Parameters:
+//  - AuthToken
+//  - UserId
+func (p *IntergridClient) GetPermissions(authToken string, userId int64) (r []*ConfigPermission, err error) {
+  if err = p.sendGetPermissions(authToken, userId); err != nil { return }
+  return p.recvGetPermissions()
+}
+
+func (p *IntergridClient) sendGetPermissions(authToken string, userId int64)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("getPermissions", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := IntergridGetPermissionsArgs{
+  AuthToken : authToken,
+  UserId : userId,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *IntergridClient) recvGetPermissions() (value []*ConfigPermission, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "getPermissions" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getPermissions failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getPermissions failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error35 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error36 error
+    error36, err = error35.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error36
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getPermissions failed: invalid message type")
+    return
+  }
+  result := IntergridGetPermissionsResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
+// Parameters:
+//  - AuthToken
+//  - Permission
+func (p *IntergridClient) SetPermission(authToken string, permission *ConfigPermission) (err error) {
+  if err = p.sendSetPermission(authToken, permission); err != nil { return }
+  return p.recvSetPermission()
+}
+
+func (p *IntergridClient) sendSetPermission(authToken string, permission *ConfigPermission)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("setPermission", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := IntergridSetPermissionArgs{
+  AuthToken : authToken,
+  Permission : permission,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *IntergridClient) recvSetPermission() (err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "setPermission" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "setPermission failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "setPermission failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error37 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error38 error
+    error38, err = error37.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error38
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "setPermission failed: invalid message type")
+    return
+  }
+  result := IntergridSetPermissionResult{}
   if err = result.Read(iprot); err != nil {
     return
   }
@@ -5849,16 +7603,16 @@ func (p *IntergridClient) recvPing() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error26 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error27 error
-    error27, err = error26.Read(iprot)
+    error39 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error40 error
+    error40, err = error39.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error27
+    err = error40
     return
   }
   if mTypeId != thrift.REPLY {
@@ -5925,21 +7679,26 @@ func (p *IntergridProcessor) ProcessorMap() map[string]thrift.TProcessorFunction
 
 func NewIntergridProcessor(handler Intergrid) *IntergridProcessor {
 
-  self28 := &IntergridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self28.processorMap["login"] = &intergridProcessorLogin{handler:handler}
-  self28.processorMap["logout"] = &intergridProcessorLogout{handler:handler}
-  self28.processorMap["addWorkPlace"] = &intergridProcessorAddWorkPlace{handler:handler}
-  self28.processorMap["executeSelectQuery"] = &intergridProcessorExecuteSelectQuery{handler:handler}
-  self28.processorMap["executeNonSelectQuery"] = &intergridProcessorExecuteNonSelectQuery{handler:handler}
-  self28.processorMap["startBatchExecution"] = &intergridProcessorStartBatchExecution{handler:handler}
-  self28.processorMap["addQuery"] = &intergridProcessorAddQuery{handler:handler}
-  self28.processorMap["finishBatchExecution"] = &intergridProcessorFinishBatchExecution{handler:handler}
-  self28.processorMap["batchExecute"] = &intergridProcessorBatchExecute{handler:handler}
-  self28.processorMap["getEvents"] = &intergridProcessorGetEvents{handler:handler}
-  self28.processorMap["postEvent"] = &intergridProcessorPostEvent{handler:handler}
-  self28.processorMap["ping"] = &intergridProcessorPing{handler:handler}
-  self28.processorMap["zip"] = &intergridProcessorZip{handler:handler}
-return self28
+  self41 := &IntergridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self41.processorMap["login"] = &intergridProcessorLogin{handler:handler}
+  self41.processorMap["logout"] = &intergridProcessorLogout{handler:handler}
+  self41.processorMap["addWorkPlace"] = &intergridProcessorAddWorkPlace{handler:handler}
+  self41.processorMap["executeSelectQuery"] = &intergridProcessorExecuteSelectQuery{handler:handler}
+  self41.processorMap["executeNonSelectQuery"] = &intergridProcessorExecuteNonSelectQuery{handler:handler}
+  self41.processorMap["startBatchExecution"] = &intergridProcessorStartBatchExecution{handler:handler}
+  self41.processorMap["addQuery"] = &intergridProcessorAddQuery{handler:handler}
+  self41.processorMap["finishBatchExecution"] = &intergridProcessorFinishBatchExecution{handler:handler}
+  self41.processorMap["batchExecute"] = &intergridProcessorBatchExecute{handler:handler}
+  self41.processorMap["getEvents"] = &intergridProcessorGetEvents{handler:handler}
+  self41.processorMap["postEvent"] = &intergridProcessorPostEvent{handler:handler}
+  self41.processorMap["getCentrifugoConf"] = &intergridProcessorGetCentrifugoConf{handler:handler}
+  self41.processorMap["getConfiguration"] = &intergridProcessorGetConfiguration{handler:handler}
+  self41.processorMap["getProps"] = &intergridProcessorGetProps{handler:handler}
+  self41.processorMap["getPermissions"] = &intergridProcessorGetPermissions{handler:handler}
+  self41.processorMap["setPermission"] = &intergridProcessorSetPermission{handler:handler}
+  self41.processorMap["ping"] = &intergridProcessorPing{handler:handler}
+  self41.processorMap["zip"] = &intergridProcessorZip{handler:handler}
+return self41
 }
 
 func (p *IntergridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -5950,12 +7709,12 @@ func (p *IntergridProcessor) Process(iprot, oprot thrift.TProtocol) (success boo
   }
   iprot.Skip(thrift.STRUCT)
   iprot.ReadMessageEnd()
-  x29 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x42 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-  x29.Write(oprot)
+  x42.Write(oprot)
   oprot.WriteMessageEnd()
   oprot.Flush()
-  return false, x29
+  return false, x42
 
 }
 
@@ -6505,8 +8264,9 @@ func (p *intergridProcessorPostEvent) Process(seqId int32, iprot, oprot thrift.T
 
   iprot.ReadMessageEnd()
   result := IntergridPostEventResult{}
+var retval string
   var err2 error
-  if err2 = p.handler.PostEvent(args.AuthToken, args.Event); err2 != nil {
+  if retval, err2 = p.handler.PostEvent(args.AuthToken, args.Event); err2 != nil {
   switch v := err2.(type) {
     case *UserException:
   result.UserException = v
@@ -6518,8 +8278,272 @@ func (p *intergridProcessorPostEvent) Process(seqId int32, iprot, oprot thrift.T
     oprot.Flush()
     return true, err2
   }
-  }
+  } else {
+    result.Success = &retval
+}
   if err2 = oprot.WriteMessageBegin("postEvent", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type intergridProcessorGetCentrifugoConf struct {
+  handler Intergrid
+}
+
+func (p *intergridProcessorGetCentrifugoConf) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := IntergridGetCentrifugoConfArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("getCentrifugoConf", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := IntergridGetCentrifugoConfResult{}
+var retval *CentrifugoConf
+  var err2 error
+  if retval, err2 = p.handler.GetCentrifugoConf(args.AuthToken); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getCentrifugoConf: " + err2.Error())
+    oprot.WriteMessageBegin("getCentrifugoConf", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("getCentrifugoConf", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type intergridProcessorGetConfiguration struct {
+  handler Intergrid
+}
+
+func (p *intergridProcessorGetConfiguration) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := IntergridGetConfigurationArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("getConfiguration", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := IntergridGetConfigurationResult{}
+var retval *ConfigObject
+  var err2 error
+  if retval, err2 = p.handler.GetConfiguration(args.AuthToken, args.UserId); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getConfiguration: " + err2.Error())
+    oprot.WriteMessageBegin("getConfiguration", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("getConfiguration", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type intergridProcessorGetProps struct {
+  handler Intergrid
+}
+
+func (p *intergridProcessorGetProps) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := IntergridGetPropsArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("getProps", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := IntergridGetPropsResult{}
+var retval []*ConfigProp
+  var err2 error
+  if retval, err2 = p.handler.GetProps(args.AuthToken); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getProps: " + err2.Error())
+    oprot.WriteMessageBegin("getProps", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("getProps", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type intergridProcessorGetPermissions struct {
+  handler Intergrid
+}
+
+func (p *intergridProcessorGetPermissions) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := IntergridGetPermissionsArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("getPermissions", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := IntergridGetPermissionsResult{}
+var retval []*ConfigPermission
+  var err2 error
+  if retval, err2 = p.handler.GetPermissions(args.AuthToken, args.UserId); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getPermissions: " + err2.Error())
+    oprot.WriteMessageBegin("getPermissions", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("getPermissions", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type intergridProcessorSetPermission struct {
+  handler Intergrid
+}
+
+func (p *intergridProcessorSetPermission) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := IntergridSetPermissionArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("setPermission", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := IntergridSetPermissionResult{}
+  var err2 error
+  if err2 = p.handler.SetPermission(args.AuthToken, args.Permission); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing setPermission: " + err2.Error())
+    oprot.WriteMessageBegin("setPermission", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  }
+  if err2 = oprot.WriteMessageBegin("setPermission", thrift.REPLY, seqId); err2 != nil {
     err = err2
   }
   if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -8825,11 +10849,11 @@ func (p *IntergridBatchExecuteArgs)  ReadField2(iprot thrift.TProtocol) error {
   tSlice := make([]*Query, 0, size)
   p.Queries =  tSlice
   for i := 0; i < size; i ++ {
-    _elem30 := &Query{}
-    if err := _elem30.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem30), err)
+    _elem43 := &Query{}
+    if err := _elem43.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem43), err)
     }
-    p.Queries = append(p.Queries, _elem30)
+    p.Queries = append(p.Queries, _elem43)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -9290,11 +11314,11 @@ func (p *IntergridGetEventsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*Event, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem31 := &Event{}
-    if err := _elem31.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem31), err)
+    _elem44 := &Event{}
+    if err := _elem44.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem44), err)
     }
-    p.Success = append(p.Success, _elem31)
+    p.Success = append(p.Success, _elem44)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -9488,8 +11512,10 @@ func (p *IntergridPostEventArgs) String() string {
 }
 
 // Attributes:
+//  - Success
 //  - UserException
 type IntergridPostEventResult struct {
+  Success *string `thrift:"success,0" db:"success" json:"success,omitempty"`
   UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
 }
 
@@ -9497,6 +11523,13 @@ func NewIntergridPostEventResult() *IntergridPostEventResult {
   return &IntergridPostEventResult{}
 }
 
+var IntergridPostEventResult_Success_DEFAULT string
+func (p *IntergridPostEventResult) GetSuccess() string {
+  if !p.IsSetSuccess() {
+    return IntergridPostEventResult_Success_DEFAULT
+  }
+return *p.Success
+}
 var IntergridPostEventResult_UserException_DEFAULT *UserException
 func (p *IntergridPostEventResult) GetUserException() *UserException {
   if !p.IsSetUserException() {
@@ -9504,11 +11537,128 @@ func (p *IntergridPostEventResult) GetUserException() *UserException {
   }
 return p.UserException
 }
+func (p *IntergridPostEventResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
 func (p *IntergridPostEventResult) IsSetUserException() bool {
   return p.UserException != nil
 }
 
 func (p *IntergridPostEventResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridPostEventResult)  ReadField0(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 0: ", err)
+} else {
+  p.Success = &v
+}
+  return nil
+}
+
+func (p *IntergridPostEventResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *IntergridPostEventResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("postEvent_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridPostEventResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := oprot.WriteString(string(*p.Success)); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err) }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridPostEventResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridPostEventResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridPostEventResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+type IntergridGetCentrifugoConfArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+}
+
+func NewIntergridGetCentrifugoConfArgs() *IntergridGetCentrifugoConfArgs {
+  return &IntergridGetCentrifugoConfArgs{}
+}
+
+
+func (p *IntergridGetCentrifugoConfArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+func (p *IntergridGetCentrifugoConfArgs) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
   }
@@ -9540,16 +11690,17 @@ func (p *IntergridPostEventResult) Read(iprot thrift.TProtocol) error {
   return nil
 }
 
-func (p *IntergridPostEventResult)  ReadField1(iprot thrift.TProtocol) error {
-  p.UserException = &UserException{}
-  if err := p.UserException.Read(iprot); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
-  }
+func (p *IntergridGetCentrifugoConfArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
   return nil
 }
 
-func (p *IntergridPostEventResult) Write(oprot thrift.TProtocol) error {
-  if err := oprot.WriteStructBegin("postEvent_result"); err != nil {
+func (p *IntergridGetCentrifugoConfArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getCentrifugoConf_args"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
   if p != nil {
     if err := p.writeField1(oprot); err != nil { return err }
@@ -9561,7 +11712,137 @@ func (p *IntergridPostEventResult) Write(oprot thrift.TProtocol) error {
   return nil
 }
 
-func (p *IntergridPostEventResult) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *IntergridGetCentrifugoConfArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *IntergridGetCentrifugoConfArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetCentrifugoConfArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type IntergridGetCentrifugoConfResult struct {
+  Success *CentrifugoConf `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewIntergridGetCentrifugoConfResult() *IntergridGetCentrifugoConfResult {
+  return &IntergridGetCentrifugoConfResult{}
+}
+
+var IntergridGetCentrifugoConfResult_Success_DEFAULT *CentrifugoConf
+func (p *IntergridGetCentrifugoConfResult) GetSuccess() *CentrifugoConf {
+  if !p.IsSetSuccess() {
+    return IntergridGetCentrifugoConfResult_Success_DEFAULT
+  }
+return p.Success
+}
+var IntergridGetCentrifugoConfResult_UserException_DEFAULT *UserException
+func (p *IntergridGetCentrifugoConfResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return IntergridGetCentrifugoConfResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *IntergridGetCentrifugoConfResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *IntergridGetCentrifugoConfResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *IntergridGetCentrifugoConfResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetCentrifugoConfResult)  ReadField0(iprot thrift.TProtocol) error {
+  p.Success = &CentrifugoConf{}
+  if err := p.Success.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetCentrifugoConfResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetCentrifugoConfResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getCentrifugoConf_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetCentrifugoConfResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := p.Success.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetCentrifugoConfResult) writeField1(oprot thrift.TProtocol) (err error) {
   if p.IsSetUserException() {
     if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
       return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
@@ -9574,11 +11855,977 @@ func (p *IntergridPostEventResult) writeField1(oprot thrift.TProtocol) (err erro
   return err
 }
 
-func (p *IntergridPostEventResult) String() string {
+func (p *IntergridGetCentrifugoConfResult) String() string {
   if p == nil {
     return "<nil>"
   }
-  return fmt.Sprintf("IntergridPostEventResult(%+v)", *p)
+  return fmt.Sprintf("IntergridGetCentrifugoConfResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+//  - UserId
+type IntergridGetConfigurationArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  UserId int64 `thrift:"userId,2" db:"userId" json:"userId"`
+}
+
+func NewIntergridGetConfigurationArgs() *IntergridGetConfigurationArgs {
+  return &IntergridGetConfigurationArgs{}
+}
+
+
+func (p *IntergridGetConfigurationArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+
+func (p *IntergridGetConfigurationArgs) GetUserId() int64 {
+  return p.UserId
+}
+func (p *IntergridGetConfigurationArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetConfigurationArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *IntergridGetConfigurationArgs)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.UserId = v
+}
+  return nil
+}
+
+func (p *IntergridGetConfigurationArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getConfiguration_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetConfigurationArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *IntergridGetConfigurationArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("userId", thrift.I64, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:userId: ", p), err) }
+  if err := oprot.WriteI64(int64(p.UserId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.userId (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:userId: ", p), err) }
+  return err
+}
+
+func (p *IntergridGetConfigurationArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetConfigurationArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type IntergridGetConfigurationResult struct {
+  Success *ConfigObject `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewIntergridGetConfigurationResult() *IntergridGetConfigurationResult {
+  return &IntergridGetConfigurationResult{}
+}
+
+var IntergridGetConfigurationResult_Success_DEFAULT *ConfigObject
+func (p *IntergridGetConfigurationResult) GetSuccess() *ConfigObject {
+  if !p.IsSetSuccess() {
+    return IntergridGetConfigurationResult_Success_DEFAULT
+  }
+return p.Success
+}
+var IntergridGetConfigurationResult_UserException_DEFAULT *UserException
+func (p *IntergridGetConfigurationResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return IntergridGetConfigurationResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *IntergridGetConfigurationResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *IntergridGetConfigurationResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *IntergridGetConfigurationResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetConfigurationResult)  ReadField0(iprot thrift.TProtocol) error {
+  p.Success = &ConfigObject{}
+  if err := p.Success.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetConfigurationResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetConfigurationResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getConfiguration_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetConfigurationResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := p.Success.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetConfigurationResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetConfigurationResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetConfigurationResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+type IntergridGetPropsArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+}
+
+func NewIntergridGetPropsArgs() *IntergridGetPropsArgs {
+  return &IntergridGetPropsArgs{}
+}
+
+
+func (p *IntergridGetPropsArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+func (p *IntergridGetPropsArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPropsArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *IntergridGetPropsArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getProps_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetPropsArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *IntergridGetPropsArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetPropsArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type IntergridGetPropsResult struct {
+  Success []*ConfigProp `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewIntergridGetPropsResult() *IntergridGetPropsResult {
+  return &IntergridGetPropsResult{}
+}
+
+var IntergridGetPropsResult_Success_DEFAULT []*ConfigProp
+
+func (p *IntergridGetPropsResult) GetSuccess() []*ConfigProp {
+  return p.Success
+}
+var IntergridGetPropsResult_UserException_DEFAULT *UserException
+func (p *IntergridGetPropsResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return IntergridGetPropsResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *IntergridGetPropsResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *IntergridGetPropsResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *IntergridGetPropsResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPropsResult)  ReadField0(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*ConfigProp, 0, size)
+  p.Success =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem45 := &ConfigProp{}
+    if err := _elem45.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem45), err)
+    }
+    p.Success = append(p.Success, _elem45)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPropsResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPropsResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getProps_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetPropsResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Success)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Success {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetPropsResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetPropsResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetPropsResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+//  - UserId
+type IntergridGetPermissionsArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  UserId int64 `thrift:"userId,2" db:"userId" json:"userId"`
+}
+
+func NewIntergridGetPermissionsArgs() *IntergridGetPermissionsArgs {
+  return &IntergridGetPermissionsArgs{}
+}
+
+
+func (p *IntergridGetPermissionsArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+
+func (p *IntergridGetPermissionsArgs) GetUserId() int64 {
+  return p.UserId
+}
+func (p *IntergridGetPermissionsArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPermissionsArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *IntergridGetPermissionsArgs)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.UserId = v
+}
+  return nil
+}
+
+func (p *IntergridGetPermissionsArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getPermissions_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetPermissionsArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *IntergridGetPermissionsArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("userId", thrift.I64, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:userId: ", p), err) }
+  if err := oprot.WriteI64(int64(p.UserId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.userId (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:userId: ", p), err) }
+  return err
+}
+
+func (p *IntergridGetPermissionsArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetPermissionsArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type IntergridGetPermissionsResult struct {
+  Success []*ConfigPermission `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewIntergridGetPermissionsResult() *IntergridGetPermissionsResult {
+  return &IntergridGetPermissionsResult{}
+}
+
+var IntergridGetPermissionsResult_Success_DEFAULT []*ConfigPermission
+
+func (p *IntergridGetPermissionsResult) GetSuccess() []*ConfigPermission {
+  return p.Success
+}
+var IntergridGetPermissionsResult_UserException_DEFAULT *UserException
+func (p *IntergridGetPermissionsResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return IntergridGetPermissionsResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *IntergridGetPermissionsResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *IntergridGetPermissionsResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *IntergridGetPermissionsResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPermissionsResult)  ReadField0(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*ConfigPermission, 0, size)
+  p.Success =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem46 := &ConfigPermission{}
+    if err := _elem46.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem46), err)
+    }
+    p.Success = append(p.Success, _elem46)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPermissionsResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *IntergridGetPermissionsResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getPermissions_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridGetPermissionsResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Success)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Success {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetPermissionsResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridGetPermissionsResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridGetPermissionsResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+//  - Permission
+type IntergridSetPermissionArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  Permission *ConfigPermission `thrift:"permission,2" db:"permission" json:"permission"`
+}
+
+func NewIntergridSetPermissionArgs() *IntergridSetPermissionArgs {
+  return &IntergridSetPermissionArgs{}
+}
+
+
+func (p *IntergridSetPermissionArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+var IntergridSetPermissionArgs_Permission_DEFAULT *ConfigPermission
+func (p *IntergridSetPermissionArgs) GetPermission() *ConfigPermission {
+  if !p.IsSetPermission() {
+    return IntergridSetPermissionArgs_Permission_DEFAULT
+  }
+return p.Permission
+}
+func (p *IntergridSetPermissionArgs) IsSetPermission() bool {
+  return p.Permission != nil
+}
+
+func (p *IntergridSetPermissionArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridSetPermissionArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *IntergridSetPermissionArgs)  ReadField2(iprot thrift.TProtocol) error {
+  p.Permission = &ConfigPermission{}
+  if err := p.Permission.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Permission), err)
+  }
+  return nil
+}
+
+func (p *IntergridSetPermissionArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("setPermission_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridSetPermissionArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *IntergridSetPermissionArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("permission", thrift.STRUCT, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:permission: ", p), err) }
+  if err := p.Permission.Write(oprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Permission), err)
+  }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:permission: ", p), err) }
+  return err
+}
+
+func (p *IntergridSetPermissionArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridSetPermissionArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - UserException
+type IntergridSetPermissionResult struct {
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewIntergridSetPermissionResult() *IntergridSetPermissionResult {
+  return &IntergridSetPermissionResult{}
+}
+
+var IntergridSetPermissionResult_UserException_DEFAULT *UserException
+func (p *IntergridSetPermissionResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return IntergridSetPermissionResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *IntergridSetPermissionResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *IntergridSetPermissionResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *IntergridSetPermissionResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *IntergridSetPermissionResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("setPermission_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *IntergridSetPermissionResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *IntergridSetPermissionResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("IntergridSetPermissionResult(%+v)", *p)
 }
 
 type IntergridPingArgs struct {

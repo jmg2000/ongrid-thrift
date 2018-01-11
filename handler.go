@@ -21,7 +21,7 @@ package main
 
 import (
 	"crypto/md5"
-	_ "database/sql"
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -54,6 +54,7 @@ type Session struct {
 	queries       map[string][]ongrid2.Query
 	transactionID int
 	db            *sqlx.DB
+	config        *ongrid2.ConfigObject
 }
 
 type Sessions map[int]*Session
@@ -337,24 +338,31 @@ func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Que
 }
 
 /* Other function */
-
-// TODO: возврат полного request'а
 func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.Event, err error) {
 
 	if _, err = checkToken(authToken); err != nil {
 		return nil, err
 	}
 
-	var createdAt time.Time
-	err = dbOnGrid.QueryRowx("select created_at from sys$events where id = ?", last).Scan(&createdAt)
-	if err != nil {
-		log.Printf("GetEvents: %v\n", err)
-		return
+	log.Println("GetEvents start..")
+
+	var rows *sqlx.Rows
+
+	if len(last) == 32 {
+		var createdAt time.Time
+		err = dbOnGrid.QueryRowx("select created_at from sys$events where id = ?", last).Scan(&createdAt)
+		if err != nil {
+			log.Printf("GetEvents: %v\n", err)
+			return
+		}
+		// пока считываем только реквесты (type = 1)
+		rows, err = dbOnGrid.Queryx("select * from sys$events where created_at > ? and type = 1", createdAt)
+	} else {
+		rows, err = dbOnGrid.Queryx("select * from sys$events where type = 1")
 	}
-	// пока считываем только реквесты (type = 1)
-	rows, err := dbOnGrid.Queryx("select * from sys$events where created_at > ? and type = 1", createdAt)
+
 	if err != nil {
-		log.Printf("GetEvents: %v\n", err)
+		log.Printf("GetEvents, select * from sys$events error: %v\n", err)
 		return
 	}
 	defer rows.Close()
@@ -387,22 +395,21 @@ func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.
 
 			events = append(events, &event)
 		}
-
 	}
 
 	return
 }
 
 // PostEvent create or update event in backend
-func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) error {
+func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) (string, error) {
 	if _, err := checkToken(authToken); err != nil {
-		return err
+		return "", err
 	}
 
 	if event.Type != ongrid2.EventType_REQUEST {
-		return nil
+		return "", nil
 	}
-	
+
 	request := event.Request
 
 	var objectID int
@@ -412,15 +419,15 @@ func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) err
 
 		} else {
 			log.Printf("PostEvent, select id from sys$requests error: %v", err)
-			return err
+			return "", err
 		}
 	}
 
 	if objectID == 0 {
-		err = dbOnGrid.QueryRowx("select gen_id(gen_sys$requests_id from rdb$database").Scan(&objectID)
+		err = dbOnGrid.QueryRowx("select gen_id(gen_sys$requests_id, 1) from rdb$database").Scan(&objectID)
 		if err != nil {
 			log.Printf("PostEvent, select gen_id error: %v", err)
-			return err
+			return "", err
 		}
 
 		_, err := dbOnGrid.NamedExec("insert into sys$requests (id, userid, company, createddatetime, desireddatetime, desiredtimeperiod, phone, email, description, car, status) "+
@@ -440,27 +447,27 @@ func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) err
 			})
 		if err != nil {
 			log.Printf("PostEvent, insert into sys$requests error: %v", err)
-			return err
+			return "", err
 		}
 	} else {
 		_, err = dbOnGrid.NamedExec("update sys$requests set userid = :user, company = :comapny, createddatetime = :createdat, desireddatetime = :desired, "+
-		"desiredtimeperiod = :desiredperiod, phone = :phone, email = :email, description = :descr, car = :car, status = :status where id = :reqid",
-		map[string]interface{}{
-			"user":          request.User.ID,
-			"company":       request.Company.ID,
-			"createdat":     time.Unix(request.CreatedDateTime, 0),
-			"desired":       time.Unix(request.DesiredDateTime, 0),
-			"desiredperiod": request.DesiredTimePeriod,
-			"phone":         request.Phone,
-			"email":         request.Email,
-			"descr":         request.Description,
-			"car":           request.Car.ID,
-			"status":        request.Status,
-			"reqid":         objectID,
-		})
+			"desiredtimeperiod = :desiredperiod, phone = :phone, email = :email, description = :descr, car = :car, status = :status where id = :reqid",
+			map[string]interface{}{
+				"user":          request.User.ID,
+				"company":       request.Company.ID,
+				"createdat":     time.Unix(request.CreatedDateTime, 0),
+				"desired":       time.Unix(request.DesiredDateTime, 0),
+				"desiredperiod": request.DesiredTimePeriod,
+				"phone":         request.Phone,
+				"email":         request.Email,
+				"descr":         request.Description,
+				"car":           request.Car.ID,
+				"status":        request.Status,
+				"reqid":         objectID,
+			})
 		if err != nil {
 			log.Printf("PostEvent, update sys$requests error: %v", err)
-			return err
+			return "", err
 		}
 	}
 
@@ -468,7 +475,7 @@ func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) err
 	err = dbOnGrid.QueryRowx("select hex_uuid from get_hex_uuid").Scan(&hexUUID)
 	if err != nil {
 		log.Printf("select hex_uuid from get_hex_uuid error: %v", err)
-		return err
+		return "", err
 	}
 	log.Printf("New UUID: %s", hexUUID)
 
@@ -480,7 +487,405 @@ func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) err
 		})
 	if err != nil {
 		log.Printf("PostEvent, insert into sys$events error: %v", err)
+		return "", err
+	}
+
+	return hexUUID, nil
+}
+
+func (p *IntergridHandler) GetCentrifugoConf(authToken string) (*ongrid2.CentrifugoConf, error) {
+	if _, err := checkToken(authToken); err != nil {
+		return nil, err
+	}
+
+	var centrifugoConf ongrid2.CentrifugoConf
+
+	centrifugoConf.Host = "165.227.139.6"
+	centrifugoConf.Port = 8000
+	centrifugoConf.Secret = "secret"
+
+	return &centrifugoConf, nil
+}
+
+/*
+	ObjectType
+	0 - Field
+	1 - Table
+	2 - Prop
+	3 - Event
+	4 - Template
+	5 - Menu
+	6 - Toolbar
+	7 - Procedure
+	10 - Configuration
+*/
+
+type DBConfigObject struct {
+	ID          int            `db:"OBJECTID"`
+	ObjType     int            `db:"OBJECTTYPE"`
+	ParamType   int            `db:"PARAMTYPE"`
+	Name        string         `db:"OBJECTNAME"`
+	Param       sql.NullString `db:"OBJECTPARAM"`
+	Value       sql.NullString `db:"PARAMVALUE"`
+	AddField    sql.NullString `db:"ADDFIELD"`
+	Owner       int            `db:"OBJECTOWNER"`
+	GrpVis      sql.NullString `db:"GRPVIS"`
+	GrpCreate   sql.NullString `db:"GRPCREATE"`
+	GrpEdit     sql.NullString `db:"GRPEDIT"`
+	GrpDelete   sql.NullString `db:"GRPDELETE"`
+	GrpReadonly sql.NullString `db:"GRPRONLY"`
+	GrpValue    sql.NullString `db:"GRPVALUE"`
+	Tag         sql.NullInt64  `db:"OBJECTTAG"`
+}
+
+func (p *IntergridHandler) GetConfiguration(authToken string, userId int64) (*ongrid2.ConfigObject, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+
+	start := time.Now()
+
+	if sessions[sessionID].config != nil {
+		log.Printf("GetConfiguration %.2fs elapsed\n", time.Since(start).Seconds())
+		log.Printf("Configuration name: %s, description: %s", sessions[sessionID].config.Name, sessions[sessionID].config.Description)
+		return sessions[sessionID].config, nil
+	}
+
+	var Configuration ongrid2.ConfigObject
+	baseObjects := make(map[int]*ongrid2.ConfigObject)
+
+	rows, err := sessions[sessionID].db.Queryx("select o.objectid, o.objecttype, o.paramtype, o.objectname, o.objectparam, o.paramvalue, o.addfield, "+
+		"coalesce(o.objectowner, 0) as objectowner, "+
+		"p1.a_visible as grpvis, p1.a_create as grpcreate, p1.a_edit as grpedit, p1.a_delete as grpdelete, "+
+		"p1.a_readonly as grpronly, p1.a_value as grpvalue, "+
+		"coalesce(o.objecttag, 0) as objecttag "+
+		"from igo$objects o "+
+		"left join igo$permission p1 on (p1.objectid = o.objectid and p1.userid in (select parent from igo$users where userid = ? )) "+
+		"where coalesce(o.isfolder, 0) = 0 and coalesce(o.deleted, 0) = 0 "+
+		"order by o.objectkind, coalesce(o.objectowner, 0), o.objecttag, o.objectname", userId)
+	if err != nil {
+		log.Printf("GetConfiguration error: %v", err)
+	}
+
+	var objectCount int
+	var DBObject DBConfigObject
+
+	for rows.Next() {
+		err := rows.StructScan(&DBObject)
+		if err != nil {
+			log.Printf("GetConfiguration, StructScan error: %v", err)
+		}
+
+		if obj, ok := baseObjects[DBObject.ID]; ok {
+			if DBObject.GrpCreate.Valid && DBObject.GrpCreate.String == "+" {
+				obj.Permission.ObjectCreate = true
+			}
+			if DBObject.GrpEdit.Valid && DBObject.GrpEdit.String == "+" {
+				obj.Permission.ObjectEdit = true
+			}
+			if DBObject.GrpDelete.Valid && DBObject.GrpDelete.String == "+" {
+				obj.Permission.ObjectEdit = true
+			}
+			if DBObject.GrpReadonly.Valid && DBObject.GrpReadonly.String == "-" {
+				obj.Permission.ObjectReadonly = false
+			}
+		} else {
+			object := ongrid2.ConfigObject{}
+
+			object.ID = int64(DBObject.ID)
+			object.Type = int32(DBObject.ObjType)
+			object.Name = DBObject.Name
+			if DBObject.Param.Valid {
+				object.Description = DBObject.Param.String
+			}
+			object.Subtype = int32(DBObject.ParamType)
+
+			switch DBObject.ObjType {
+			case 2:
+				if DBObject.GrpValue.Valid && (len(DBObject.GrpValue.String) > 0) {
+					object.Value = DBObject.GrpValue.String
+				} else {
+					if DBObject.Value.Valid {
+						object.Value = DBObject.Value.String
+					}
+				}
+			case 3:
+				// Type3 - events, value store in field AddField
+				if DBObject.AddField.Valid {
+					object.Value = DBObject.AddField.String
+				}
+			default:
+				if DBObject.Value.Valid {
+					object.Value = DBObject.Value.String
+				}
+			}
+
+			if DBObject.Tag.Valid {
+				object.Tag = int32(DBObject.Tag.Int64)
+			}
+
+			// Permissions (dpFalse)
+
+			permission := ongrid2.ConfigPermission{}
+
+			permission.ObjectId = int64(DBObject.ID)
+			if DBObject.GrpValue.Valid {
+				permission.ObjectValue = DBObject.GrpValue.String
+			}
+
+			permission.ObjectVisible = true
+			permission.ObjectReadonly = true
+
+			if DBObject.GrpVis.Valid && DBObject.GrpVis.String == "+" {
+				permission.ObjectReadonly = true
+			}
+			if DBObject.GrpVis.Valid && DBObject.GrpVis.String == "-" {
+				permission.ObjectReadonly = false
+			}
+			if DBObject.GrpCreate.Valid && DBObject.GrpCreate.String == "+" {
+				permission.ObjectCreate = true
+			}
+			if DBObject.GrpCreate.Valid && DBObject.GrpCreate.String == "-" {
+				permission.ObjectCreate = false
+			}
+			if DBObject.GrpEdit.Valid && DBObject.GrpEdit.String == "+" {
+				permission.ObjectEdit = true
+			}
+			if DBObject.GrpEdit.Valid && DBObject.GrpEdit.String == "-" {
+				permission.ObjectEdit = false
+			}
+			if DBObject.GrpDelete.Valid && DBObject.GrpDelete.String == "+" {
+				permission.ObjectDelete = true
+			}
+			if DBObject.GrpDelete.Valid && DBObject.GrpDelete.String == "-" {
+				permission.ObjectDelete = false
+			}
+			if DBObject.GrpReadonly.Valid && DBObject.GrpReadonly.String == "+" {
+				permission.ObjectReadonly = true
+			}
+			if DBObject.GrpReadonly.Valid && DBObject.GrpReadonly.String == "-" {
+				permission.ObjectReadonly = false
+			}
+
+			object.Permission = &permission
+
+			baseObjects[DBObject.ID] = &object
+
+			if DBObject.Owner == 0 {
+				if object.Type == 10 {
+					Configuration.ID = object.ID
+					Configuration.Type = object.Type
+					Configuration.Name = object.Name
+					if DBObject.Param.Valid {
+						Configuration.Description = DBObject.Param.String
+					}
+				} else {
+					Configuration.Objects = append(Configuration.Objects, &object)
+				}
+			} else {
+				switch object.Type {
+				case 2:
+					// property
+					baseObjects[DBObject.Owner].Props = append(baseObjects[DBObject.Owner].Props, &object)
+				case 3:
+					// event
+					baseObjects[DBObject.Owner].Events = append(baseObjects[DBObject.Owner].Events, &object)
+				default:
+					// object
+					baseObjects[DBObject.Owner].Objects = append(baseObjects[DBObject.Owner].Objects, &object)
+				}
+			}
+			objectCount++
+		}
+	}
+
+	log.Printf("GetConfiguration, object count = %d, %.2fs elapsed\n", objectCount, time.Since(start).Seconds())
+	log.Printf("Configuration name: %s, description: %s", Configuration.Name, Configuration.Description)
+
+	sessions[sessionID].config = &Configuration
+
+	return &Configuration, nil
+}
+
+type DBConfigProp struct {
+	ID         int            `db:"ID"`
+	ObjectType int            `db:"OBJECTTYPE"`
+	ParamType  int            `db:"PARAMTYPE"`
+	PropType   int            `db:"PROPTYPE"`
+	PName      string         `db:"PNAME"`
+	PCaption   string         `db:"PCAPTION"`
+	PType      int            `db:"PTYPE"`
+	PValues    sql.NullString `db:"PVALUES"`
+	PDefault   sql.NullString `db:"PDEFAULT"`
+	PAction    int            `db:"PACTION"`
+}
+
+func (p *IntergridHandler) GetProps(authToken string) (props []*ongrid2.ConfigProp, err error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := sessions[sessionID].db.Queryx("select id, objecttype, paramtype, proptype, pname, " +
+		"pcaption, ptype, pvalues, pdefault, paction from igo$props where isfolder = 0 " +
+		"order by objecttype")
+
+	if err != nil {
+		log.Printf("GetProps error: %v", err)
+		return
+	}
+
+	var DBProp DBConfigProp
+
+	for rows.Next() {
+		err = rows.StructScan(&DBProp)
+		if err != nil {
+			log.Printf("GetProps, StructScan error: %v", err)
+			return
+		}
+		prop := ongrid2.ConfigProp{}
+
+		prop.ID = int64(DBProp.ID)
+		prop.ObjectType = int32(DBProp.ObjectType)
+		prop.ParamType = int32(DBProp.ParamType)
+		prop.PropType = int32(DBProp.PropType)
+		prop.PName = DBProp.PName
+		prop.PCaption = DBProp.PCaption
+		prop.PType = int32(DBProp.PType)
+		if DBProp.PValues.Valid {
+			prop.PValues = DBProp.PValues.String
+		}
+		if DBProp.PDefault.Valid {
+			prop.PDefault = DBProp.PDefault.String
+		}
+		prop.PAction = int32(DBProp.PAction)
+
+		props = append(props, &prop)
+	}
+
+	return
+}
+
+type DBConfigPermission struct {
+	ID             int            `db:"ID"`
+	ObjectId       int            `db:"OBJECTID"`
+	UserId         int            `db:"USERID"`
+	ObjectVisible  string         `db:"A_VISIBLE"`
+	ObjectReadonly string         `db:"A_READONLY"`
+	ObjectCreate   string         `db:"A_CREATE"`
+	ObjectEdit     string         `db:"A_EDIT"`
+	ObjectDelete   string         `db:"A_DELETE"`
+	ObjectValue    sql.NullString `db:"A_VALUE"`
+}
+
+func (p *IntergridHandler) GetPermissions(authToken string, userId int64) ([]*ongrid2.ConfigPermission, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := sessions[sessionID].db.Queryx("select id, objectid, userid, a_visible, a_readonly, " +
+		"a_create, a_edit, a_delete, a_value from igo$permission")
+
+	if err != nil {
+		log.Printf("GetPermissions error: %v", err)
+		return nil, err
+	}
+
+	var DBPermission DBConfigPermission
+	permissions := []*ongrid2.ConfigPermission{}
+
+	for rows.Next() {
+		err = rows.StructScan(&DBPermission)
+		if err != nil {
+			log.Printf("GetPermissions, StructScan error: %v", err)
+			return nil, err
+		}
+
+		permission := ongrid2.ConfigPermission{}
+
+		permission.ID = int64(DBPermission.ID)
+		permission.ObjectId = int64(DBPermission.ObjectId)
+		permission.UserId = int64(DBPermission.UserId)
+		if DBPermission.ObjectVisible == "+" {
+			permission.ObjectVisible = true
+		}
+		if DBPermission.ObjectReadonly == "+" {
+			permission.ObjectReadonly = true
+		}
+		if DBPermission.ObjectCreate == "+" {
+			permission.ObjectCreate = true
+		}
+		if DBPermission.ObjectEdit == "+" {
+			permission.ObjectEdit = true
+		}
+		if DBPermission.ObjectDelete == "+" {
+			permission.ObjectDelete = true
+		}
+		if DBPermission.ObjectValue.Valid {
+			permission.ObjectValue = DBPermission.ObjectValue.String
+		}
+
+		permissions = append(permissions, &permission)
+	}
+
+	return permissions, nil
+}
+
+func (p *IntergridHandler) SetPermission(authToken string, permission *ongrid2.ConfigPermission) error {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return err
+	}
+
+	permissionData := map[string]interface{}{}
+
+	if permission.ObjectVisible {
+		permissionData["avis"] = "+"
+	} else {
+		permissionData["avis"] = "-"
+	}
+	if permission.ObjectReadonly {
+		permissionData["aro"] = "+"
+	} else {
+		permissionData["aro"] = "-"
+	}
+	if permission.ObjectCreate {
+		permissionData["ac"] = "+"
+	} else {
+		permissionData["ac"] = "-"
+	}
+	if permission.ObjectEdit {
+		permissionData["ae"] = "+"
+	} else {
+		permissionData["ae"] = "-"
+	}
+	if permission.ObjectDelete {
+		permissionData["ad"] = "+"
+	} else {
+		permissionData["ad"] = "-"
+	}
+	permissionData["av"] = permission.ObjectValue
+
+	if permission.ID > 0 {
+		_, err := sessions[sessionID].db.NamedExec("update igo$permission set a_visible = :avis, a_readonly = :aro, "+
+			"a_create = :ac, a_edit = :ae, a_delete = :ad, a_value = :av",
+			permissionData)
+		if err != nil {
+			log.Printf("SetPermissions error: %v", err)
+			return err
+		}
+	} else {
+		permissionData["oid"] = permission.ObjectId
+		permissionData["uid"] = permission.UserId
+		_, err := sessions[sessionID].db.NamedExec("insert into igo$permission (objectid, userid, a_visible, a_readonly, "+
+			"a_create, a_edit, a_delete, a_value) values (:oid, :uid, :avis, :aro, :ac, :ae, :ad, :av)",
+			permissionData)
+		if err != nil {
+			log.Printf("SetPermissions error: %v", err)
+			return err
+		}
 	}
 
 	return nil
