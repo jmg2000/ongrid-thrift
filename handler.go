@@ -79,25 +79,27 @@ func init() {
 	sessions = make(Sessions)
 }
 
-type IntergridHandler struct {
+type DBHandler struct {
 }
 
-func NewIntergridHandler() *IntergridHandler {
-	return &IntergridHandler{}
+func NewDBHandler() *DBHandler {
+	return &DBHandler{}
 }
 
-func (p *IntergridHandler) Ping() (err error) {
+type OngridHandler struct {
+}
+
+func NewOngridHandler() *OngridHandler {
+	return &OngridHandler{}
+}
+
+func (p *OngridHandler) Ping() (err error) {
 	fmt.Print("ping()\n")
 	return nil
 }
 
-func (p *IntergridHandler) Zip() (err error) {
-	fmt.Print("zip()\n")
-	return nil
-}
-
 // Login - авторизация в системе по мак адресу
-func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
+func (p *OngridHandler) Login(macAddr string) (token string, err error) {
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
 	if err != nil {
 		log.Fatalln("Connect: ", err)
@@ -117,7 +119,7 @@ func (p *IntergridHandler) Login(macAddr string) (token string, err error) {
 }
 
 // Logout - выход из системы
-func (p *IntergridHandler) Logout(authToken string) error {
+func (p *OngridHandler) Logout(authToken string) error {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return err
@@ -135,7 +137,7 @@ func (p *IntergridHandler) Logout(authToken string) error {
 }
 
 // AddWorkPlace добавляет новое рабочее место в таблицу sys$workplaces
-func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string) (token string, err error) {
+func (p *OngridHandler) AddWorkPlace(wpName, macAddr, login, password string) (token string, err error) {
 	var user *User
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
 	if err != nil {
@@ -165,7 +167,7 @@ func (p *IntergridHandler) AddWorkPlace(wpName, macAddr, login, password string)
 /* SQL function */
 
 // ExecuteSelectQuery выполняет sql запрос и возвращает результат
-func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Query) (*ongrid2.DataRowSet, error) {
+func (p *DBHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Query) (*ongrid2.DataRowSet, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -256,7 +258,7 @@ func (p *IntergridHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Q
 }
 
 // ExecuteNonSelectQuery аналог ExecSQL, не возвращает результата запроса
-func (p *IntergridHandler) ExecuteNonSelectQuery(authToken string, query *ongrid2.Query) error {
+func (p *DBHandler) ExecuteNonSelectQuery(authToken string, query *ongrid2.Query) error {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return err
@@ -270,7 +272,7 @@ func (p *IntergridHandler) ExecuteNonSelectQuery(authToken string, query *ongrid
 }
 
 // StartBatchExecution возвращяет новый batchId
-func (p *IntergridHandler) StartBatchExecution(authToken string) (string, error) {
+func (p *DBHandler) StartBatchExecution(authToken string) (string, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return "", err
@@ -280,7 +282,7 @@ func (p *IntergridHandler) StartBatchExecution(authToken string) (string, error)
 }
 
 // AddQuery добавляет запрос в map queries с определенным batchId
-func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ongrid2.Query) error {
+func (p *DBHandler) AddQuery(authToken string, batchId string, query *ongrid2.Query) error {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return err
@@ -290,7 +292,7 @@ func (p *IntergridHandler) AddQuery(authToken string, batchId string, query *ong
 }
 
 // FinishBatchExecution выполняет все запросы из map queries с определенным batchId
-func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
+func (p *DBHandler) FinishBatchExecution(authToken string, batchId string, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return "", err
@@ -314,7 +316,7 @@ func (p *IntergridHandler) FinishBatchExecution(authToken string, batchId string
 }
 
 // BatchExecute выполняет в транзакции все запросы из queries
-func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Query, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
+func (p *DBHandler) BatchExecute(authToken string, queries []*ongrid2.Query, condition *ongrid2.Query, onSuccess *ongrid2.Query) (string, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return "", err
@@ -338,7 +340,7 @@ func (p *IntergridHandler) BatchExecute(authToken string, queries []*ongrid2.Que
 }
 
 /* Other function */
-func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.Event, err error) {
+func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Event, err error) {
 
 	if _, err = checkToken(authToken); err != nil {
 		return nil, err
@@ -401,7 +403,7 @@ func (p *IntergridHandler) GetEvents(authToken, last string) (events []*ongrid2.
 }
 
 // PostEvent create or update event in backend
-func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) (string, error) {
+func (p *OngridHandler) PostEvent(authToken string, event *ongrid2.Event) (string, error) {
 	if _, err := checkToken(authToken); err != nil {
 		return "", err
 	}
@@ -493,7 +495,7 @@ func (p *IntergridHandler) PostEvent(authToken string, event *ongrid2.Event) (st
 	return hexUUID, nil
 }
 
-func (p *IntergridHandler) GetCentrifugoConf(authToken string) (*ongrid2.CentrifugoConf, error) {
+func (p *OngridHandler) GetCentrifugoConf(authToken string) (*ongrid2.CentrifugoConf, error) {
 	if _, err := checkToken(authToken); err != nil {
 		return nil, err
 	}
@@ -538,7 +540,7 @@ type DBConfigObject struct {
 	Tag         sql.NullInt64  `db:"OBJECTTAG"`
 }
 
-func (p *IntergridHandler) GetConfiguration(authToken string, userId int64) (*ongrid2.ConfigObject, error) {
+func (p *OngridHandler) GetConfiguration(authToken string, userId int64) (*ongrid2.ConfigObject, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -624,6 +626,8 @@ func (p *IntergridHandler) GetConfiguration(authToken string, userId int64) (*on
 			if DBObject.Tag.Valid {
 				object.Tag = int32(DBObject.Tag.Int64)
 			}
+
+			object.Owner = int64(DBObject.Owner)
 
 			// Permissions (dpFalse)
 
@@ -721,7 +725,7 @@ type DBConfigProp struct {
 	PAction    int            `db:"PACTION"`
 }
 
-func (p *IntergridHandler) GetProps(authToken string) (props []*ongrid2.ConfigProp, err error) {
+func (p *OngridHandler) GetProps(authToken string) (props []*ongrid2.ConfigProp, err error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -779,7 +783,7 @@ type DBConfigPermission struct {
 	ObjectValue    sql.NullString `db:"A_VALUE"`
 }
 
-func (p *IntergridHandler) GetPermissions(authToken string, userId int64) ([]*ongrid2.ConfigPermission, error) {
+func (p *OngridHandler) GetPermissions(authToken string, userId int64) ([]*ongrid2.ConfigPermission, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -833,7 +837,7 @@ func (p *IntergridHandler) GetPermissions(authToken string, userId int64) ([]*on
 	return permissions, nil
 }
 
-func (p *IntergridHandler) SetPermission(authToken string, permission *ongrid2.ConfigPermission) error {
+func (p *OngridHandler) SetPermission(authToken string, permission *ongrid2.ConfigPermission) error {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return err

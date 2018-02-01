@@ -45,9 +45,15 @@ func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift
 		return err
 	}
 
-	handler := NewIntergridHandler()
-	processor := ongrid2.NewIntergridProcessor(handler)
+	hDB := NewDBHandler()
+	hOngrid := NewOngridHandler()
+	//processor := ongrid2.NewIntergridProcessor(handler)
+	dbProcessor := ongrid2.NewDBProcessor(hDB)
+	ongridProcessor := ongrid2.NewOngridProcessor(hOngrid)
+	processor := thrift.NewTMultiplexedProcessor()
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
+	processor.RegisterProcessor("DB", dbProcessor)
+	processor.RegisterProcessor("Ongrid", ongridProcessor)
 
 	fmt.Println("Starting the ongrid-thrift server... on ", addr)
 	return server.Serve()
