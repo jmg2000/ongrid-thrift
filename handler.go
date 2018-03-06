@@ -1013,7 +1013,6 @@ func startSession(user *User) (authToken string, err error) {
 
 // checkToken проверяет активность сессии и возвращает id сессии
 func checkToken(authToken string) (int, error) {
-	//err := dbOnGrid.QueryRowx("select id from sys$sessions where token = ? and active = 1", authToken).Scan(&sessionId)
 	sessionID, err := getSessionIdByToken(authToken)
 	if err != nil {
 		return 0, fmt.Errorf("Token unknown: %v", err)
