@@ -128,19 +128,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg23 := flag.Arg(2)
-    mbTrans24 := thrift.NewTMemoryBufferLen(len(arg23))
-    defer mbTrans24.Close()
-    _, err25 := mbTrans24.WriteString(arg23)
-    if err25 != nil {
+    arg24 := flag.Arg(2)
+    mbTrans25 := thrift.NewTMemoryBufferLen(len(arg24))
+    defer mbTrans25.Close()
+    _, err26 := mbTrans25.WriteString(arg24)
+    if err26 != nil {
       Usage()
       return
     }
-    factory26 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt27 := factory26.GetProtocol(mbTrans24)
+    factory27 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt28 := factory27.GetProtocol(mbTrans25)
     argvalue1 := ongrid2.NewQuery()
-    err28 := argvalue1.Read(jsProt27)
-    if err28 != nil {
+    err29 := argvalue1.Read(jsProt28)
+    if err29 != nil {
       Usage()
       return
     }
@@ -155,19 +155,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg30 := flag.Arg(2)
-    mbTrans31 := thrift.NewTMemoryBufferLen(len(arg30))
-    defer mbTrans31.Close()
-    _, err32 := mbTrans31.WriteString(arg30)
-    if err32 != nil {
+    arg31 := flag.Arg(2)
+    mbTrans32 := thrift.NewTMemoryBufferLen(len(arg31))
+    defer mbTrans32.Close()
+    _, err33 := mbTrans32.WriteString(arg31)
+    if err33 != nil {
       Usage()
       return
     }
-    factory33 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt34 := factory33.GetProtocol(mbTrans31)
+    factory34 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt35 := factory34.GetProtocol(mbTrans32)
     argvalue1 := ongrid2.NewQuery()
-    err35 := argvalue1.Read(jsProt34)
-    if err35 != nil {
+    err36 := argvalue1.Read(jsProt35)
+    if err36 != nil {
       Usage()
       return
     }
@@ -194,19 +194,19 @@ func main() {
     value0 := argvalue0
     argvalue1 := flag.Arg(2)
     value1 := argvalue1
-    arg39 := flag.Arg(3)
-    mbTrans40 := thrift.NewTMemoryBufferLen(len(arg39))
-    defer mbTrans40.Close()
-    _, err41 := mbTrans40.WriteString(arg39)
-    if err41 != nil {
+    arg40 := flag.Arg(3)
+    mbTrans41 := thrift.NewTMemoryBufferLen(len(arg40))
+    defer mbTrans41.Close()
+    _, err42 := mbTrans41.WriteString(arg40)
+    if err42 != nil {
       Usage()
       return
     }
-    factory42 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt43 := factory42.GetProtocol(mbTrans40)
+    factory43 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt44 := factory43.GetProtocol(mbTrans41)
     argvalue2 := ongrid2.NewQuery()
-    err44 := argvalue2.Read(jsProt43)
-    if err44 != nil {
+    err45 := argvalue2.Read(jsProt44)
+    if err45 != nil {
       Usage()
       return
     }
@@ -223,36 +223,36 @@ func main() {
     value0 := argvalue0
     argvalue1 := flag.Arg(2)
     value1 := argvalue1
-    arg47 := flag.Arg(3)
-    mbTrans48 := thrift.NewTMemoryBufferLen(len(arg47))
-    defer mbTrans48.Close()
-    _, err49 := mbTrans48.WriteString(arg47)
-    if err49 != nil {
+    arg48 := flag.Arg(3)
+    mbTrans49 := thrift.NewTMemoryBufferLen(len(arg48))
+    defer mbTrans49.Close()
+    _, err50 := mbTrans49.WriteString(arg48)
+    if err50 != nil {
       Usage()
       return
     }
-    factory50 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt51 := factory50.GetProtocol(mbTrans48)
+    factory51 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt52 := factory51.GetProtocol(mbTrans49)
     argvalue2 := ongrid2.NewQuery()
-    err52 := argvalue2.Read(jsProt51)
-    if err52 != nil {
+    err53 := argvalue2.Read(jsProt52)
+    if err53 != nil {
       Usage()
       return
     }
     value2 := argvalue2
-    arg53 := flag.Arg(4)
-    mbTrans54 := thrift.NewTMemoryBufferLen(len(arg53))
-    defer mbTrans54.Close()
-    _, err55 := mbTrans54.WriteString(arg53)
-    if err55 != nil {
+    arg54 := flag.Arg(4)
+    mbTrans55 := thrift.NewTMemoryBufferLen(len(arg54))
+    defer mbTrans55.Close()
+    _, err56 := mbTrans55.WriteString(arg54)
+    if err56 != nil {
       Usage()
       return
     }
-    factory56 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt57 := factory56.GetProtocol(mbTrans54)
+    factory57 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt58 := factory57.GetProtocol(mbTrans55)
     argvalue3 := ongrid2.NewQuery()
-    err58 := argvalue3.Read(jsProt57)
-    if err58 != nil {
+    err59 := argvalue3.Read(jsProt58)
+    if err59 != nil {
       Usage()
       return
     }
@@ -267,54 +267,54 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg60 := flag.Arg(2)
-    mbTrans61 := thrift.NewTMemoryBufferLen(len(arg60))
-    defer mbTrans61.Close()
-    _, err62 := mbTrans61.WriteString(arg60)
-    if err62 != nil { 
+    arg61 := flag.Arg(2)
+    mbTrans62 := thrift.NewTMemoryBufferLen(len(arg61))
+    defer mbTrans62.Close()
+    _, err63 := mbTrans62.WriteString(arg61)
+    if err63 != nil { 
       Usage()
       return
     }
-    factory63 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt64 := factory63.GetProtocol(mbTrans61)
+    factory64 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt65 := factory64.GetProtocol(mbTrans62)
     containerStruct1 := ongrid2.NewDBBatchExecuteArgs()
-    err65 := containerStruct1.ReadField2(jsProt64)
-    if err65 != nil {
+    err66 := containerStruct1.ReadField2(jsProt65)
+    if err66 != nil {
       Usage()
       return
     }
     argvalue1 := containerStruct1.Queries
     value1 := argvalue1
-    arg66 := flag.Arg(3)
-    mbTrans67 := thrift.NewTMemoryBufferLen(len(arg66))
-    defer mbTrans67.Close()
-    _, err68 := mbTrans67.WriteString(arg66)
-    if err68 != nil {
+    arg67 := flag.Arg(3)
+    mbTrans68 := thrift.NewTMemoryBufferLen(len(arg67))
+    defer mbTrans68.Close()
+    _, err69 := mbTrans68.WriteString(arg67)
+    if err69 != nil {
       Usage()
       return
     }
-    factory69 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt70 := factory69.GetProtocol(mbTrans67)
+    factory70 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt71 := factory70.GetProtocol(mbTrans68)
     argvalue2 := ongrid2.NewQuery()
-    err71 := argvalue2.Read(jsProt70)
-    if err71 != nil {
+    err72 := argvalue2.Read(jsProt71)
+    if err72 != nil {
       Usage()
       return
     }
     value2 := argvalue2
-    arg72 := flag.Arg(4)
-    mbTrans73 := thrift.NewTMemoryBufferLen(len(arg72))
-    defer mbTrans73.Close()
-    _, err74 := mbTrans73.WriteString(arg72)
-    if err74 != nil {
+    arg73 := flag.Arg(4)
+    mbTrans74 := thrift.NewTMemoryBufferLen(len(arg73))
+    defer mbTrans74.Close()
+    _, err75 := mbTrans74.WriteString(arg73)
+    if err75 != nil {
       Usage()
       return
     }
-    factory75 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt76 := factory75.GetProtocol(mbTrans73)
+    factory76 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt77 := factory76.GetProtocol(mbTrans74)
     argvalue3 := ongrid2.NewQuery()
-    err77 := argvalue3.Read(jsProt76)
-    if err77 != nil {
+    err78 := argvalue3.Read(jsProt77)
+    if err78 != nil {
       Usage()
       return
     }

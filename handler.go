@@ -99,7 +99,7 @@ func (p *OngridHandler) Ping() (err error) {
 }
 
 // Login - авторизация в системе по мак адресу
-func (p *OngridHandler) Login(macAddr string) (token string, err error) {
+func (p *OngridHandler) Connect(macAddr string) (token string, err error) {
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConf.User+":"+dbConf.Password+"@"+dbConf.Host+":"+dbConf.Port+"/"+dbConf.Path)
 	if err != nil {
 		log.Fatalln("Connect: ", err)
@@ -119,7 +119,7 @@ func (p *OngridHandler) Login(macAddr string) (token string, err error) {
 }
 
 // Logout - выход из системы
-func (p *OngridHandler) Logout(authToken string) error {
+func (p *OngridHandler) Disconnect(authToken string) error {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return err
@@ -161,6 +161,11 @@ func (p *OngridHandler) AddWorkPlace(wpName, macAddr, login, password string) (t
 	}
 	log.Printf("AddWorkPlace: Auth.. Token = %s", token)
 
+	return
+}
+
+func (p *OngridHandler) Login(login, password string) (userid int64, err error) {
+	userid = 1
 	return
 }
 
