@@ -115,8 +115,7 @@ func (c *MongoConnection) GetUserByMacAddr(macAddr string) (user User, err error
 		return
 	}
 
-	fmt.Printf("GetUserByMacAddr: %v\n", result)
-
+	user.ID = result.ID.Hex()
 	user.Login = result.UserName
 	user.Password = result.Password
 	user.DBName = result.DB
@@ -141,11 +140,29 @@ func (c *MongoConnection) GetUserByLogin(login string) (user User, err error) {
 		return
 	}
 
-	fmt.Printf("GetUserByMacAddr: %v\n", result)
-
+	user.ID = result.ID.Hex()
 	user.Login = result.UserName
 	user.Password = result.Password
 	user.DBName = result.DB
 	fmt.Println(user.DBName)
 	return
+}
+
+// ClientAddWorkPlace ...
+func (c *MongoConnection) ClientAddWorkPlace(id string, wpName string, macAddr string) error {
+	session, clientCollection, err := c.getSessionAndCollection()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+
+	query := bson.M{"_id": bson.ObjectIdHex(id)}
+	pushWorkPlace := bson.M{"$push": bson.M{"workPlaces": bson.M{"_id": bson.NewObjectId(), "wpName": wpName, "macAddr": macAddr}}}
+	err = clientCollection.Update(query, pushWorkPlace)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }

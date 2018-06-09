@@ -26,6 +26,7 @@ import (
 	"io"
 	"log"
 	"ongrid-thrift/ongrid2"
+	"ongrid-thrift/privileges"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -45,7 +46,7 @@ type DBConfig struct {
 
 // User ...
 type User struct {
-	ID       int    `db:"CLIENTID"`
+	ID       string `db:"CLIENTID"`
 	Login    string `db:"LOGIN"`
 	Password string `db:"PASSWORD"`
 	DBName   string `db:"DBNAME"`
@@ -117,18 +118,18 @@ func (p *OngridHandler) Ping() (err error) {
 
 // Connect - авторизация в системе по мак адресу
 func (p *OngridHandler) Connect(macAddr string) (token string, err error) {
-	// dbOnGrid, err = sqlx.Connect("firebirdsql", dbConfig.user+":"+dbConfig.password+"@"+dbConfig.host+":"+dbConfig.port+"/"+dbConfig.path)
-	// if err != nil {
-	// 	log.Fatalln("Connect: ", err)
-	// 	return "", err
-	// }
-	// log.Println("Connect: System firebird database connection established")
+	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConfig.user+":"+dbConfig.password+"@"+dbConfig.host+":"+dbConfig.port+"/"+dbConfig.path)
+	if err != nil {
+		log.Fatalln("Connect: ", err)
+		return "", err
+	}
+	log.Println("Connect: System firebird database connection established")
 
 	mongoConnection = NewMongoConnection(mgoConfig)
 
 	token, err = authMac(macAddr)
 	if err != nil {
-		//dbOnGrid.Close()
+		dbOnGrid.Close()
 		mongoConnection.CloseConnection()
 		log.Println("Connect: Unknown macaddress. Database connection closed")
 		return
@@ -148,19 +149,18 @@ func (p *OngridHandler) AddWorkPlace(wpName, macAddr, login, password string) (t
 	}
 	log.Println("AddWorkPlace: Firebird db connection established")
 
-	var wpid int
+	mongoConnection = NewMongoConnection(mgoConfig)
 
 	token, user, err = authLP(login, password)
 	if err != nil {
 		dbOnGrid.Close()
+		mongoConnection.CloseConnection()
 		log.Println("AddWorkPlace: User not found. Database connection closed")
 		return
 	}
 
-	dbOnGrid.QueryRowx("select id from sys$workplaces where macaddr = ?", macAddr).Scan(&wpid)
-	if wpid == 0 {
-		dbOnGrid.MustExec("insert into sys$workplaces (userid, wpname, macaddr) values ( ?, ?, ? )", user.ID, wpName, macAddr)
-	}
+	mongoConnection.ClientAddWorkPlace(user.ID, wpName, macAddr)
+
 	log.Printf("AddWorkPlace: Auth.. Token = %s", token)
 
 	return
@@ -175,7 +175,7 @@ func (p *OngridHandler) Disconnect(authToken string) error {
 
 	//dbOnGrid.MustExec("update sys$sessions set active = 0, closed_at = ? where token = ? and active = 1", time.Now(), authToken)
 	sessions[sessionID].db.Close()
-	//dbOnGrid.Close()
+	dbOnGrid.Close()
 	mongoConnection.CloseConnection()
 
 	delete(sessions, sessionID)
@@ -405,7 +405,7 @@ func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Eve
 			log.Printf("GetEvents, StructScan: %v\n", err)
 		}
 
-		rowsRq, err := dbOnGrid.Queryx("select * from sys$requests where id = ?", dbEvent.ObjectId)
+		rowsRq, err := dbOnGrid.Queryx("select * from sys$requests where id = ?", dbEvent.ObjectID)
 		if err != nil {
 			log.Printf("GetEvents: %v\n", err)
 			return nil, err
@@ -420,9 +420,9 @@ func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Eve
 			}
 			event := ongrid2.Event{}
 
-			event.ID = dbEvent.Id
+			event.ID = dbEvent.ID
 			event.Type = 1
-			event.Request, err = getRequest(dbEvent.ObjectId)
+			event.Request, err = getRequest(dbEvent.ObjectID)
 
 			events = append(events, &event)
 		}
@@ -572,7 +572,7 @@ type dbConfigigObject struct {
 }
 
 // GetConfiguration ...
-func (p *OngridHandler) GetConfiguration(authToken string, userId int64) (*ongrid2.ConfigObject, error) {
+func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongrid2.ConfigObject, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -597,7 +597,7 @@ func (p *OngridHandler) GetConfiguration(authToken string, userId int64) (*ongri
 		"from igo$objects o "+
 		"left join igo$permission p1 on (p1.objectid = o.objectid and p1.userid in (select parent from igo$users where userid = ? )) "+
 		"where coalesce(o.isfolder, 0) = 0 and coalesce(o.deleted, 0) = 0 "+
-		"order by o.objectkind, coalesce(o.objectowner, 0), o.objecttag, o.objectname", userId)
+		"order by o.objectkind, coalesce(o.objectowner, 0), o.objecttag, o.objectname", userID)
 	if err != nil {
 		log.Printf("GetConfiguration error: %v", err)
 	}
@@ -819,7 +819,7 @@ type DBConfigPermission struct {
 }
 
 // GetPermissions ...
-func (p *OngridHandler) GetPermissions(authToken string, userId int64) ([]*ongrid2.ConfigPermission, error) {
+func (p *OngridHandler) GetPermissions(authToken string, userID int64) ([]*ongrid2.ConfigPermission, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -932,6 +932,24 @@ func (p *OngridHandler) SetPermission(authToken string, permission *ongrid2.Conf
 	return nil
 }
 
+// GetUserPrivileges ...
+func (p *OngridHandler) GetUserPrivileges(authToken string, userID int64) ([]*ongrid2.Privilege, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+
+	aclService := privileges.ACLService{}
+	aclService.Load(sessions[sessionID].db)
+
+	privileges, err := aclService.GetACL(int(userID))
+	if err != nil {
+		return nil, err
+	}
+
+	return privileges, nil
+}
+
 /* Misc function */
 
 func getParams(query *ongrid2.Query) map[string]interface{} {
@@ -957,8 +975,6 @@ func getParams(query *ongrid2.Query) map[string]interface{} {
 /* Auth func */
 
 func authMac(macAddr string) (string, error) {
-	var user User
-
 	user, err := mongoConnection.GetUserByMacAddr(macAddr)
 	if err == nil {
 		authToken, err := startSession(&user)
@@ -972,8 +988,6 @@ func authMac(macAddr string) (string, error) {
 }
 
 func authLP(login, password string) (string, *User, error) {
-	var user User
-
 	user, err := mongoConnection.GetUserByLogin(login)
 	if err != nil {
 		log.Printf("AuthLP: select from sys$clients: %v\n", err)
@@ -985,14 +999,12 @@ func authLP(login, password string) (string, *User, error) {
 	io.WriteString(h, password)
 	hpass := fmt.Sprintf("%x", h.Sum(nil))
 	if user.Password == hpass {
-		log.Println("Password correct")
+		log.Println("authLP: Password correct")
 		authToken, err := startSession(&user)
 		if err != nil {
 			return "", nil, err
 		}
 		return authToken, &user, nil
-	} else {
-		log.Println("pass incorrect!")
 	}
 
 	return "", nil, fmt.Errorf("Auth failed. Login: %s", login)
@@ -1024,14 +1036,17 @@ func startSession(user *User) (authToken string, err error) {
 	sessions[sessionID] = &Session{token: authToken, user: user}
 	log.Printf("Session id = %s\n", sessionID)
 	// Connect to client database
-	fmt.Println(user.DBName)
+
+	user.DBName = "SYSDBA:masterkey@localhost:3050/c:/database/ongrid/ongrid2data.fdb" // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! for TEST, comment for production !!!!!!!!!!!!!!!!!!!!
+
+	log.Println(user.DBName)
 	sessions[sessionID].db, err = sqlx.Connect("firebirdsql", user.DBName)
 	log.Printf("Client db: %s\n", user.DBName)
 	if err != nil {
-		log.Fatalln("Connect to client db: ", err)
+		log.Fatalln("startSession: connect to client db: ", err)
 		return "", err
 	}
-	log.Println("Login: Client database connection established")
+	log.Println("startSession: Client database connection established")
 
 	return
 }

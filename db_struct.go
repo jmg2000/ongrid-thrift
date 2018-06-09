@@ -8,15 +8,17 @@ import (
 	"time"
 )
 
+// DBAuth ...
 type DBAuth struct {
-	Id          int    `db:"CLIENTID" json:"id"`
+	ID          int    `db:"CLIENTID" json:"id"`
 	Login       string `db:"LOGIN" json:"login"`
 	Password    string `db:"PASSWORD" json:"password"`
 	Description string `db:"DESCRIPTION" json:"description"`
 }
 
+// DBRequest ...
 type DBRequest struct {
-	Id                int            `db:"ID"`
+	ID                int            `db:"ID"`
 	User              int            `db:"USERID"`
 	Company           int            `db:"COMPANY"`
 	CreatedDateTime   NullTime       `db:"CREATEDDATETIME"`
@@ -32,8 +34,9 @@ type DBRequest struct {
 	MasterInspector   sql.NullString `db:"MASTER"`
 }
 
+// DBClient ...
 type DBClient struct {
-	Id               int           `db:"ID"`
+	ID               int           `db:"ID"`
 	Email            string        `db:"EMAIL"`
 	Name             string        `db:"NAME"`
 	AccountType      int           `db:"ACCOUNTTYPE"`
@@ -44,8 +47,9 @@ type DBClient struct {
 	Company          sql.NullInt64 `db:"COMPANY"`
 }
 
+// DBCar ...
 type DBCar struct {
-	Id           int      `db:"ID"`
+	ID           int      `db:"ID"`
 	Brand        string   `db:"BRAND"`
 	Model        string   `db:"MODEL"`
 	Number       string   `db:"NUMBER"`
@@ -63,8 +67,9 @@ type DBCar struct {
 	Owner        string   `db:"OWNER"`
 }
 
+// DBPerson ...
 type DBPerson struct {
-	Id             int            `db:"ID"`
+	ID             int            `db:"ID"`
 	FirstName      string         `db:"FIRSTNAME"`
 	LastName       string         `db:"LASTNAME"`
 	PassportNumber sql.NullString `db:"PASSPORTNUMBER"`
@@ -74,8 +79,9 @@ type DBPerson struct {
 	Gender         int            `db:"GENDER"`
 }
 
+// DBCompany ...
 type DBCompany struct {
-	Id                   int            `db:"ID"`
+	ID                   int            `db:"ID"`
 	ServiceName          string         `db:"SERVICENAME"`
 	Phone                sql.NullString `db:"PHONE"`
 	LegalForm            sql.NullString `db:"LEGALFORM"`
@@ -92,13 +98,15 @@ type DBCompany struct {
 	RealAddress          sql.NullString `db:"REALADDRESS"`
 }
 
+// DBEvent ...
 type DBEvent struct {
-	Id        string    `db:"ID"`
+	ID        string    `db:"ID"`
 	EventType int       `db:"TYPE"`
-	ObjectId  int       `db:"OBJECTID"`
+	ObjectID  int       `db:"OBJECTID"`
 	CreatedAt time.Time `db:"CREATED_AT"`
 }
 
+// NullTime ...
 type NullTime struct {
 	Time  time.Time
 	Valid bool // Valid is true if Time is not NULL
@@ -118,17 +126,17 @@ func (nt NullTime) Value() (driver.Value, error) {
 	return nt.Time, nil
 }
 
-func getClient(clientId int) (*ongrid2.Client, error) {
+func getClient(clientID int) (*ongrid2.Client, error) {
 	client := ongrid2.Client{}
 	var dbClient DBClient
 
-	err := dbOnGrid.Get(&dbClient, "select id, email, name, accounttype, clienttype, registrationdate, phone, person, company from sys$clients where id = ?", clientId)
+	err := dbOnGrid.Get(&dbClient, "select id, email, name, accounttype, clienttype, registrationdate, phone, person, company from sys$clients where id = ?", clientID)
 	if err != nil {
 		log.Printf("dbOnGrid.Get from sys$client error: %v", err)
 		return nil, err
 	}
 
-	client.ID = int64(dbClient.Id)
+	client.ID = int64(dbClient.ID)
 	client.Email = &dbClient.Email
 	client.Name = &dbClient.Name
 	client.AccountType = ongrid2.AccountType(dbClient.AccountType)
@@ -156,14 +164,14 @@ func getClients() ([]*ongrid2.Client, error) {
 	}
 	defer rows.Close()
 
-	var clientId int
+	var clientID int
 
 	for rows.Next() {
-		err := rows.Scan(&clientId)
+		err := rows.Scan(&clientID)
 		if err != nil {
 			log.Printf("getClients, StructScan: %v", err)
 		}
-		client, err := getClient(clientId)
+		client, err := getClient(clientID)
 		if err != nil {
 			log.Printf("getClients: %v", err)
 		}
@@ -173,16 +181,16 @@ func getClients() ([]*ongrid2.Client, error) {
 	return clients, nil
 }
 
-func getPerson(personId int64) *ongrid2.Person {
+func getPerson(personID int64) *ongrid2.Person {
 	person := ongrid2.Person{}
 	var dbPerson DBPerson
 
-	err := dbOnGrid.Get(&dbPerson, "select * from sys$person where id = ?", personId)
+	err := dbOnGrid.Get(&dbPerson, "select * from sys$person where id = ?", personID)
 	if err != nil {
 		log.Printf("db.Get from sys$person error: %v", err)
 	}
 
-	person.ID = int32(dbPerson.Id)
+	person.ID = int32(dbPerson.ID)
 	person.FirstName = dbPerson.FirstName
 	person.LastName = dbPerson.LastName
 
@@ -195,16 +203,16 @@ func getPerson(personId int64) *ongrid2.Person {
 	return &person
 }
 
-func getCompany(companyId int64) *ongrid2.Company {
+func getCompany(companyID int64) *ongrid2.Company {
 	company := ongrid2.Company{}
 	var dbCompany DBCompany
 
-	err := dbOnGrid.Get(&dbCompany, "select * from sys$companies where id = ?", companyId)
+	err := dbOnGrid.Get(&dbCompany, "select * from sys$companies where id = ?", companyID)
 	if err != nil {
 		log.Printf("db.Get from sys$companies error: %v", err)
 	}
 
-	company.ID = int32(dbCompany.Id)
+	company.ID = int32(dbCompany.ID)
 	company.Servicename = dbCompany.ServiceName
 	company.Phone = dbCompany.Phone.String
 	company.LegalForm = dbCompany.LegalForm.String
@@ -223,17 +231,17 @@ func getCompany(companyId int64) *ongrid2.Company {
 	return &company
 }
 
-func getCar(carId int) (*ongrid2.Car, error) {
+func getCar(carID int) (*ongrid2.Car, error) {
 	car := ongrid2.Car{}
 	var dbCar DBCar
 
-	err := dbOnGrid.Get(&dbCar, "select * from sys$cars where id = ?", carId)
+	err := dbOnGrid.Get(&dbCar, "select * from sys$cars where id = ?", carID)
 	if err != nil {
 		log.Printf("db.Get from sys$cars error: %v", err)
 		return nil, err
 	}
 
-	car.ID = int64(dbCar.Id)
+	car.ID = int64(dbCar.ID)
 	car.Brand = dbCar.Brand
 	car.Model = dbCar.Model
 	car.Number = dbCar.Number
@@ -281,11 +289,11 @@ func getCars() ([]*ongrid2.Car, error) {
 	return cars, nil
 }
 
-func getRequest(requestId int) (*ongrid2.Request, error) {
+func getRequest(requestID int) (*ongrid2.Request, error) {
 	request := ongrid2.Request{}
 	var dbRequest DBRequest
 
-	err := dbOnGrid.Get(&dbRequest, "select * from sys$requests where id = ?", requestId)
+	err := dbOnGrid.Get(&dbRequest, "select * from sys$requests where id = ?", requestID)
 	if err != nil {
 		log.Printf("db.Get from sys$cars error: %v", err)
 		return nil, err
@@ -295,7 +303,7 @@ func getRequest(requestId int) (*ongrid2.Request, error) {
 	company, _ := getClient(dbRequest.Company)
 	car, _ := getCar(dbRequest.Car)
 
-	request.ID = int32(dbRequest.Id)
+	request.ID = int32(dbRequest.ID)
 	request.User = user
 	request.Company = company
 	if dbRequest.CreatedDateTime.Valid {

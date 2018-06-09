@@ -32,6 +32,7 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "   getPermissions(string authToken, i64 userId)")
   fmt.Fprintln(os.Stderr, "  void setPermission(string authToken, ConfigPermission permission)")
   fmt.Fprintln(os.Stderr, "  i64 login(string login, string password)")
+  fmt.Fprintln(os.Stderr, "   getUserPrivileges(string authToken, i64 userId)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
@@ -182,19 +183,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg117 := flag.Arg(2)
-    mbTrans118 := thrift.NewTMemoryBufferLen(len(arg117))
-    defer mbTrans118.Close()
-    _, err119 := mbTrans118.WriteString(arg117)
-    if err119 != nil {
+    arg120 := flag.Arg(2)
+    mbTrans121 := thrift.NewTMemoryBufferLen(len(arg120))
+    defer mbTrans121.Close()
+    _, err122 := mbTrans121.WriteString(arg120)
+    if err122 != nil {
       Usage()
       return
     }
-    factory120 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt121 := factory120.GetProtocol(mbTrans118)
+    factory123 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt124 := factory123.GetProtocol(mbTrans121)
     argvalue1 := ongrid2.NewEvent()
-    err122 := argvalue1.Read(jsProt121)
-    if err122 != nil {
+    err125 := argvalue1.Read(jsProt124)
+    if err125 != nil {
       Usage()
       return
     }
@@ -219,8 +220,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err125 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err125 != nil {
+    argvalue1, err128 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err128 != nil {
       Usage()
       return
     }
@@ -245,8 +246,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err128 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err128 != nil {
+    argvalue1, err131 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err131 != nil {
       Usage()
       return
     }
@@ -261,19 +262,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg130 := flag.Arg(2)
-    mbTrans131 := thrift.NewTMemoryBufferLen(len(arg130))
-    defer mbTrans131.Close()
-    _, err132 := mbTrans131.WriteString(arg130)
-    if err132 != nil {
+    arg133 := flag.Arg(2)
+    mbTrans134 := thrift.NewTMemoryBufferLen(len(arg133))
+    defer mbTrans134.Close()
+    _, err135 := mbTrans134.WriteString(arg133)
+    if err135 != nil {
       Usage()
       return
     }
-    factory133 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt134 := factory133.GetProtocol(mbTrans131)
+    factory136 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt137 := factory136.GetProtocol(mbTrans134)
     argvalue1 := ongrid2.NewConfigPermission()
-    err135 := argvalue1.Read(jsProt134)
-    if err135 != nil {
+    err138 := argvalue1.Read(jsProt137)
+    if err138 != nil {
       Usage()
       return
     }
@@ -291,6 +292,22 @@ func main() {
     argvalue1 := flag.Arg(2)
     value1 := argvalue1
     fmt.Print(client.Login(value0, value1))
+    fmt.Print("\n")
+    break
+  case "getUserPrivileges":
+    if flag.NArg() - 1 != 2 {
+      fmt.Fprintln(os.Stderr, "GetUserPrivileges requires 2 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    argvalue1, err142 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err142 != nil {
+      Usage()
+      return
+    }
+    value1 := argvalue1
+    fmt.Print(client.GetUserPrivileges(value0, value1))
     fmt.Print("\n")
     break
   case "ping":

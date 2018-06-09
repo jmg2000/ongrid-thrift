@@ -27,6 +27,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
+// Usage ...
 func Usage() {
 	fmt.Fprint(os.Stderr, "Usage of ", os.Args[0], ":\n")
 	flag.PrintDefaults()

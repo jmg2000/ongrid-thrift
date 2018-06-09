@@ -6377,6 +6377,151 @@ func (p *Document) String() string {
   return fmt.Sprintf("Document(%+v)", *p)
 }
 
+// Attributes:
+//  - Resource
+//  - Permission
+//  - Access
+type Privilege struct {
+  Resource int64 `thrift:"resource,1" db:"resource" json:"resource"`
+  Permission string `thrift:"permission,2" db:"permission" json:"permission"`
+  Access bool `thrift:"access,3" db:"access" json:"access"`
+}
+
+func NewPrivilege() *Privilege {
+  return &Privilege{}
+}
+
+
+func (p *Privilege) GetResource() int64 {
+  return p.Resource
+}
+
+func (p *Privilege) GetPermission() string {
+  return p.Permission
+}
+
+func (p *Privilege) GetAccess() bool {
+  return p.Access
+}
+func (p *Privilege) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *Privilege)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.Resource = v
+}
+  return nil
+}
+
+func (p *Privilege)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.Permission = v
+}
+  return nil
+}
+
+func (p *Privilege)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBool(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Access = v
+}
+  return nil
+}
+
+func (p *Privilege) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("Privilege"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *Privilege) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("resource", thrift.I64, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:resource: ", p), err) }
+  if err := oprot.WriteI64(int64(p.Resource)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.resource (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:resource: ", p), err) }
+  return err
+}
+
+func (p *Privilege) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("permission", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:permission: ", p), err) }
+  if err := oprot.WriteString(string(p.Permission)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.permission (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:permission: ", p), err) }
+  return err
+}
+
+func (p *Privilege) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("access", thrift.BOOL, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:access: ", p), err) }
+  if err := oprot.WriteBool(bool(p.Access)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.access (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:access: ", p), err) }
+  return err
+}
+
+func (p *Privilege) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("Privilege(%+v)", *p)
+}
+
 // Structs can also be exceptions, if they are nasty.
 // 
 // Attributes:
@@ -6799,11 +6944,6 @@ func (p *NotFoundException) Error() string {
 type DB interface {  //Ahh, now onto the cool part, defining a service. Services just need a name
   //and can optionally inherit from another service using the extends keyword.
 
-  // A method definition looks like C code. It has a return type, arguments,
-  // and optionally a list of exceptions that it may throw. Note that argument
-  // lists and exception lists are specified using the exact same syntax as
-  // field lists in struct or exception definitions.
-  // 
   // Parameters:
   //  - AuthToken
   //  - Query
@@ -6862,11 +7002,6 @@ func NewDBClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thri
   }
 }
 
-// A method definition looks like C code. It has a return type, arguments,
-// and optionally a list of exceptions that it may throw. Note that argument
-// lists and exception lists are specified using the exact same syntax as
-// field lists in struct or exception definitions.
-// 
 // Parameters:
 //  - AuthToken
 //  - Query
@@ -9635,6 +9770,10 @@ type Ongrid interface {
   //  - Login
   //  - Password
   Login(login string, password string) (r int64, err error)
+  // Parameters:
+  //  - AuthToken
+  //  - UserId
+  GetUserPrivileges(authToken string, userId int64) (r []*Privilege, err error)
   Ping() (err error)
 }
 
@@ -10556,6 +10695,88 @@ func (p *OngridClient) recvLogin() (value int64, err error) {
   return
 }
 
+// Parameters:
+//  - AuthToken
+//  - UserId
+func (p *OngridClient) GetUserPrivileges(authToken string, userId int64) (r []*Privilege, err error) {
+  if err = p.sendGetUserPrivileges(authToken, userId); err != nil { return }
+  return p.recvGetUserPrivileges()
+}
+
+func (p *OngridClient) sendGetUserPrivileges(authToken string, userId int64)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("getUserPrivileges", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := OngridGetUserPrivilegesArgs{
+  AuthToken : authToken,
+  UserId : userId,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *OngridClient) recvGetUserPrivileges() (value []*Privilege, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "getUserPrivileges" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getUserPrivileges failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getUserPrivileges failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error101 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error102 error
+    error102, err = error101.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error102
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getUserPrivileges failed: invalid message type")
+    return
+  }
+  result := OngridGetUserPrivilegesResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
 func (p *OngridClient) Ping() (err error) {
   if err = p.sendPing(); err != nil { return }
   return p.recvPing()
@@ -10602,16 +10823,16 @@ func (p *OngridClient) recvPing() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error101 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error102 error
-    error102, err = error101.Read(iprot)
+    error103 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error104 error
+    error104, err = error103.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error102
+    err = error104
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10649,20 +10870,21 @@ func (p *OngridProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 
 func NewOngridProcessor(handler Ongrid) *OngridProcessor {
 
-  self103 := &OngridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self103.processorMap["connect"] = &ongridProcessorConnect{handler:handler}
-  self103.processorMap["disconnect"] = &ongridProcessorDisconnect{handler:handler}
-  self103.processorMap["addWorkPlace"] = &ongridProcessorAddWorkPlace{handler:handler}
-  self103.processorMap["getEvents"] = &ongridProcessorGetEvents{handler:handler}
-  self103.processorMap["postEvent"] = &ongridProcessorPostEvent{handler:handler}
-  self103.processorMap["getCentrifugoConf"] = &ongridProcessorGetCentrifugoConf{handler:handler}
-  self103.processorMap["getConfiguration"] = &ongridProcessorGetConfiguration{handler:handler}
-  self103.processorMap["getProps"] = &ongridProcessorGetProps{handler:handler}
-  self103.processorMap["getPermissions"] = &ongridProcessorGetPermissions{handler:handler}
-  self103.processorMap["setPermission"] = &ongridProcessorSetPermission{handler:handler}
-  self103.processorMap["login"] = &ongridProcessorLogin{handler:handler}
-  self103.processorMap["ping"] = &ongridProcessorPing{handler:handler}
-return self103
+  self105 := &OngridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self105.processorMap["connect"] = &ongridProcessorConnect{handler:handler}
+  self105.processorMap["disconnect"] = &ongridProcessorDisconnect{handler:handler}
+  self105.processorMap["addWorkPlace"] = &ongridProcessorAddWorkPlace{handler:handler}
+  self105.processorMap["getEvents"] = &ongridProcessorGetEvents{handler:handler}
+  self105.processorMap["postEvent"] = &ongridProcessorPostEvent{handler:handler}
+  self105.processorMap["getCentrifugoConf"] = &ongridProcessorGetCentrifugoConf{handler:handler}
+  self105.processorMap["getConfiguration"] = &ongridProcessorGetConfiguration{handler:handler}
+  self105.processorMap["getProps"] = &ongridProcessorGetProps{handler:handler}
+  self105.processorMap["getPermissions"] = &ongridProcessorGetPermissions{handler:handler}
+  self105.processorMap["setPermission"] = &ongridProcessorSetPermission{handler:handler}
+  self105.processorMap["login"] = &ongridProcessorLogin{handler:handler}
+  self105.processorMap["getUserPrivileges"] = &ongridProcessorGetUserPrivileges{handler:handler}
+  self105.processorMap["ping"] = &ongridProcessorPing{handler:handler}
+return self105
 }
 
 func (p *OngridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -10673,12 +10895,12 @@ func (p *OngridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, 
   }
   iprot.Skip(thrift.STRUCT)
   iprot.ReadMessageEnd()
-  x104 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x106 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-  x104.Write(oprot)
+  x106.Write(oprot)
   oprot.WriteMessageEnd()
   oprot.Flush()
-  return false, x104
+  return false, x106
 
 }
 
@@ -11237,6 +11459,59 @@ var retval int64
     result.Success = &retval
 }
   if err2 = oprot.WriteMessageBegin("login", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type ongridProcessorGetUserPrivileges struct {
+  handler Ongrid
+}
+
+func (p *ongridProcessorGetUserPrivileges) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := OngridGetUserPrivilegesArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("getUserPrivileges", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := OngridGetUserPrivilegesResult{}
+var retval []*Privilege
+  var err2 error
+  if retval, err2 = p.handler.GetUserPrivileges(args.AuthToken, args.UserId); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getUserPrivileges: " + err2.Error())
+    oprot.WriteMessageBegin("getUserPrivileges", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("getUserPrivileges", thrift.REPLY, seqId); err2 != nil {
     err = err2
   }
   if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -12155,11 +12430,11 @@ func (p *OngridGetEventsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*Event, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem105 := &Event{}
-    if err := _elem105.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem105), err)
+    _elem107 := &Event{}
+    if err := _elem107.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem107), err)
     }
-    p.Success = append(p.Success, _elem105)
+    p.Success = append(p.Success, _elem107)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13112,11 +13387,11 @@ func (p *OngridGetPropsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigProp, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem106 := &ConfigProp{}
-    if err := _elem106.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem106), err)
+    _elem108 := &ConfigProp{}
+    if err := _elem108.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem108), err)
     }
-    p.Success = append(p.Success, _elem106)
+    p.Success = append(p.Success, _elem108)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13378,11 +13653,11 @@ func (p *OngridGetPermissionsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigPermission, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem107 := &ConfigPermission{}
-    if err := _elem107.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem107), err)
+    _elem109 := &ConfigPermission{}
+    if err := _elem109.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem109), err)
     }
-    p.Success = append(p.Success, _elem107)
+    p.Success = append(p.Success, _elem109)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13915,6 +14190,272 @@ func (p *OngridLoginResult) String() string {
     return "<nil>"
   }
   return fmt.Sprintf("OngridLoginResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+//  - UserId
+type OngridGetUserPrivilegesArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  UserId int64 `thrift:"userId,2" db:"userId" json:"userId"`
+}
+
+func NewOngridGetUserPrivilegesArgs() *OngridGetUserPrivilegesArgs {
+  return &OngridGetUserPrivilegesArgs{}
+}
+
+
+func (p *OngridGetUserPrivilegesArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+
+func (p *OngridGetUserPrivilegesArgs) GetUserId() int64 {
+  return p.UserId
+}
+func (p *OngridGetUserPrivilegesArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesArgs)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.UserId = v
+}
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getUserPrivileges_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *OngridGetUserPrivilegesArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("userId", thrift.I64, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:userId: ", p), err) }
+  if err := oprot.WriteI64(int64(p.UserId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.userId (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:userId: ", p), err) }
+  return err
+}
+
+func (p *OngridGetUserPrivilegesArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("OngridGetUserPrivilegesArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type OngridGetUserPrivilegesResult struct {
+  Success []*Privilege `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewOngridGetUserPrivilegesResult() *OngridGetUserPrivilegesResult {
+  return &OngridGetUserPrivilegesResult{}
+}
+
+var OngridGetUserPrivilegesResult_Success_DEFAULT []*Privilege
+
+func (p *OngridGetUserPrivilegesResult) GetSuccess() []*Privilege {
+  return p.Success
+}
+var OngridGetUserPrivilegesResult_UserException_DEFAULT *UserException
+func (p *OngridGetUserPrivilegesResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return OngridGetUserPrivilegesResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *OngridGetUserPrivilegesResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *OngridGetUserPrivilegesResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *OngridGetUserPrivilegesResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesResult)  ReadField0(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*Privilege, 0, size)
+  p.Success =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem110 := &Privilege{}
+    if err := _elem110.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem110), err)
+    }
+    p.Success = append(p.Success, _elem110)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getUserPrivileges_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *OngridGetUserPrivilegesResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Success)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Success {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *OngridGetUserPrivilegesResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *OngridGetUserPrivilegesResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("OngridGetUserPrivilegesResult(%+v)", *p)
 }
 
 type OngridPingArgs struct {
