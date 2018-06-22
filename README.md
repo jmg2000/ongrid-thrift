@@ -21,14 +21,17 @@
 #### handler.go
 
 Модуль с реализацией всех методов thrift сервисов DB и Ongrid. В thrift методах authToken, token - токен авторизации. Он возвращяется в методах `Connect()` и `AddWorkPlace()`, а генерируется в функции `startSession()`. Остальные методы используют этот токен для проверки авторизации пользователя и выбора текущей сессии. Для выхода из сессии используется метод `Disconnect()`. Сессия это структура вида: 
-><p>type Session struct {
+
+```
+type Session struct {
 	token         string
 	user          *User
 	queries       map[string][]ongrid2.Query
 	transactionID int
 	db            *sqlx.DB
 	config        *ongrid2.ConfigObject
-}</p>
+}
+```
 где 
 - token - токен авторизации,
 - user - текущий клиент,
