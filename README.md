@@ -33,12 +33,12 @@ type Session struct {
 }
 ```
 где 
-- token - токен авторизации,
-- user - текущий клиент,
-- queries - список запросов для работы с транзакциями,
-- transactionID - id текущей транзакции,
-- db - текущяя БД пользователя (firebird),
-- config - конфигурация (из igo$objects)
+* token - токен авторизации,
+* user - текущий клиент,
+* queries - список запросов для работы с транзакциями,
+* transactionID - id текущей транзакции,
+* db - текущяя БД пользователя (firebird),
+* config - конфигурация (из igo$objects)
 
 Сессии хранятся в хеше sessions, ключем является id сессии.
 
@@ -50,7 +50,7 @@ type Session struct {
 
 `Ongrid.Disconnect(authToken string)` - выход из системы. Входящие параметры: authToken - токен авторизации.
 
-`DB.ExecuteSelectQuery(authToken string, query *ongrid2.Query) (*ongrid2.DataRowSet, error)` - выполняет sql запрос и возвращает результат. Входящие параметры: authToken - токен авторизации, query - sql запрос. Исходящие параметры: DataRowSet - dataset с ответом.
+`DB.ExecuteSelectQuery(authToken string, query *ongrid2.Query) (*ongrid2.DataRowSet, error)` - выполняет sql запрос и возвращает результат. Входящие параметры: authToken - токен авторизации, query - sql запрос. Исходящие параметры: DataRowSet - dataset с ответом. ongrid2.Query это структура с sql запросом и списком параметров. ongrid2.DataRowSet - структура с метеданными о столбцах sql ответа и список строк ответа.
 
 `DB.ExecuteNonSelectQuery(authToken string, query *ongrid2.Query)` - выполныет sql запрос без возврата результата (update, insert, delete).  Входящие параметры: authToken - токен авторизации, query - sql запрос.
 
@@ -107,4 +107,54 @@ type Session struct {
 `GetUserByLogin(login string) (user User, err error)` - запрашивает клиента из коллекции clients по логину. Входящие параметры: логин. Исходящие параметры: user - клиент.
 
 `ClientAddWorkPlace(id string, wpName string, macAddr string) error` - добавляен новое рабочее место в БД в коллекцию clients. Входящие параметры: id - id клента, wpName - имя рабочего места, macAddr - мак адрес.
+
+#### privileges.go
+
+В этом модуле релизована модель RBAC (Role-based access control)
+
+Главный объект - `ACLService`
+
+`ACLService.load()` - здесь происходит загрузка данных из таблиц: og$users, og$groups, og$roles, og$permissions, og$group_role, og$role_permission. Для загрузки вызываются методы:
+
+`ACLService.loadUsers()`, `ACLService.loadGroups()`, `ACLService.loadRoles()`, `ACLService.loadPermissions()`
+
+`ACLService.GetACL(userID int)` - Возвращает все права для пользователя с userID ввиде списка:
+```
+type Privilege struct {
+  Resource int64 - ObjectId
+  Permission string - Действие
+  Access bool - Разрешено или нет
+}
+```
+
+#### ThriftDataset2.pas
+
+### Класс TThriftOngrid
+
+`TThriftOngrid.login(url: string, macaddr: string)` - метод для авторизации в трифт сервисе. url - адрес сервера с трифт сервисом, macaddr - макадрес клиента. Метода устанавливает соединение с трифтом, получает authToken и сам объект сервиса и сохраняет его в внутренних полях объекта (FAuthToken, FClient)
+
+`TThriftOngrid.logout()` - выход из трифт сериса. На строне сервера происходит закрытие сессии, см. описание handler.go
+
+`TThriftOngrid.loadConfiguration(userId)` - загрузка конфигурации в переменню класса FConfig. 
+
+`TThriftOngrid.addWorkPlace(WPName, UserName, Password: string)` - вызывает метод addWorkPlace трифт сервиса
+
+`ThriftOngrid.getEvents(lastEvent string)` - запрашивет последние события через метод getEvent трифт сервиса. В качестве параметра передается id последнего запрошенного события
+
+`TThriftOnrgid.postEvent(event: IEvent)` - создание нового события. Вызов метода PostEvent трифта
+
+`TThriftOngrid.getCentrifugoConf` - метод запрашивает конфигурацию сервиса Centrifugo 
+
+`TThriftOngrid.getConfigObjectsByType(ObjectType: TObjectType)` - запрашиваем все объекты загруженой конфигурации с типом ObjectType
+
+`TThriftOngrid.getConfigObjectById(ObjectId: integer)` - запрашивем объект загруженной конфигурации с определенным ObjectId
+
+`TThriftOngrid.getEventByName(AObject: IConfigObject; EventName: string)` - запрос евнта указанного объекта по имени эвента.
+
+`TThriftOngrid.getPropByName(AObject: IConfigObject; PropName: string)` - запрос свойства указанного объекта по имени свойства.
+
+`TThriftOngrid.getPrivileges(userId: integer)` - загрузка всех прав пользователя с userId
+
+`TThriftOngrid.isAllowed(ObjectId: integer; Permission: string): boolean` - функция возвращает true, если текущему пользователю разрешено действие Permission для объекта ObjectId
+
 
