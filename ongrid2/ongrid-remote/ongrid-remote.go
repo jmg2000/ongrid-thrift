@@ -27,12 +27,11 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "   getEvents(string authToken, string last)")
   fmt.Fprintln(os.Stderr, "  string postEvent(string authToken, Event event)")
   fmt.Fprintln(os.Stderr, "  CentrifugoConf getCentrifugoConf(string authToken)")
-  fmt.Fprintln(os.Stderr, "  ConfigObject getConfiguration(string authToken, i64 userId)")
+  fmt.Fprintln(os.Stderr, "  ConfigObject getConfiguration(string authToken)")
   fmt.Fprintln(os.Stderr, "   getProps(string authToken)")
-  fmt.Fprintln(os.Stderr, "   getPermissions(string authToken, i64 userId)")
-  fmt.Fprintln(os.Stderr, "  void setPermission(string authToken, ConfigPermission permission)")
   fmt.Fprintln(os.Stderr, "  i64 login(string login, string password)")
   fmt.Fprintln(os.Stderr, "   getUserPrivileges(string authToken, i64 userId)")
+  fmt.Fprintln(os.Stderr, "   getUsers(string authToken)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
@@ -183,19 +182,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg120 := flag.Arg(2)
-    mbTrans121 := thrift.NewTMemoryBufferLen(len(arg120))
-    defer mbTrans121.Close()
-    _, err122 := mbTrans121.WriteString(arg120)
-    if err122 != nil {
+    arg118 := flag.Arg(2)
+    mbTrans119 := thrift.NewTMemoryBufferLen(len(arg118))
+    defer mbTrans119.Close()
+    _, err120 := mbTrans119.WriteString(arg118)
+    if err120 != nil {
       Usage()
       return
     }
-    factory123 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt124 := factory123.GetProtocol(mbTrans121)
+    factory121 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt122 := factory121.GetProtocol(mbTrans119)
     argvalue1 := ongrid2.NewEvent()
-    err125 := argvalue1.Read(jsProt124)
-    if err125 != nil {
+    err123 := argvalue1.Read(jsProt122)
+    if err123 != nil {
       Usage()
       return
     }
@@ -214,19 +213,13 @@ func main() {
     fmt.Print("\n")
     break
   case "getConfiguration":
-    if flag.NArg() - 1 != 2 {
-      fmt.Fprintln(os.Stderr, "GetConfiguration requires 2 args")
+    if flag.NArg() - 1 != 1 {
+      fmt.Fprintln(os.Stderr, "GetConfiguration requires 1 args")
       flag.Usage()
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err128 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err128 != nil {
-      Usage()
-      return
-    }
-    value1 := argvalue1
-    fmt.Print(client.GetConfiguration(value0, value1))
+    fmt.Print(client.GetConfiguration(value0))
     fmt.Print("\n")
     break
   case "getProps":
@@ -237,49 +230,6 @@ func main() {
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
     fmt.Print(client.GetProps(value0))
-    fmt.Print("\n")
-    break
-  case "getPermissions":
-    if flag.NArg() - 1 != 2 {
-      fmt.Fprintln(os.Stderr, "GetPermissions requires 2 args")
-      flag.Usage()
-    }
-    argvalue0 := flag.Arg(1)
-    value0 := argvalue0
-    argvalue1, err131 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err131 != nil {
-      Usage()
-      return
-    }
-    value1 := argvalue1
-    fmt.Print(client.GetPermissions(value0, value1))
-    fmt.Print("\n")
-    break
-  case "setPermission":
-    if flag.NArg() - 1 != 2 {
-      fmt.Fprintln(os.Stderr, "SetPermission requires 2 args")
-      flag.Usage()
-    }
-    argvalue0 := flag.Arg(1)
-    value0 := argvalue0
-    arg133 := flag.Arg(2)
-    mbTrans134 := thrift.NewTMemoryBufferLen(len(arg133))
-    defer mbTrans134.Close()
-    _, err135 := mbTrans134.WriteString(arg133)
-    if err135 != nil {
-      Usage()
-      return
-    }
-    factory136 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt137 := factory136.GetProtocol(mbTrans134)
-    argvalue1 := ongrid2.NewConfigPermission()
-    err138 := argvalue1.Read(jsProt137)
-    if err138 != nil {
-      Usage()
-      return
-    }
-    value1 := argvalue1
-    fmt.Print(client.SetPermission(value0, value1))
     fmt.Print("\n")
     break
   case "login":
@@ -301,13 +251,23 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err142 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err142 != nil {
+    argvalue1, err130 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err130 != nil {
       Usage()
       return
     }
     value1 := argvalue1
     fmt.Print(client.GetUserPrivileges(value0, value1))
+    fmt.Print("\n")
+    break
+  case "getUsers":
+    if flag.NArg() - 1 != 1 {
+      fmt.Fprintln(os.Stderr, "GetUsers requires 1 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    fmt.Print(client.GetUsers(value0))
     fmt.Print("\n")
     break
   case "ping":

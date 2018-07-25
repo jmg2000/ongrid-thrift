@@ -22,8 +22,9 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"git.apache.org/thrift.git/lib/go/thrift"
 	"ongrid-thrift/ongrid2"
+
+	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
 func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, addr string, secure bool) error {
@@ -55,6 +56,6 @@ func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift
 	processor.RegisterProcessor("DB", dbProcessor)
 	processor.RegisterProcessor("Ongrid", ongridProcessor)
 
-	fmt.Println("Starting the ongrid-thrift server... on ", addr)
+	fmt.Println("Starting the ongrid-thrift server ver 0.1.2 on ", addr)
 	return server.Serve()
 }

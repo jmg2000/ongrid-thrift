@@ -27,6 +27,7 @@ import (
 	"log"
 	"ongrid-thrift/ongrid2"
 	"ongrid-thrift/privileges"
+	"strconv"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -44,21 +45,36 @@ type DBConfig struct {
 	path     string
 }
 
-// User ...
-type User struct {
-	ID       string `db:"CLIENTID"`
-	Login    string `db:"LOGIN"`
-	Password string `db:"PASSWORD"`
-	DBName   string `db:"DBNAME"`
+// Database config for User struct
+type Database struct {
+	host     string
+	port     int
+	path     string
+	user     string
+	password string
+	dataDB   string
+	configDB string
 }
 
-// Session conains session data
+// User ...
+type User struct {
+	ID        string
+	Login     string
+	Password  string
+	FirstName string
+	LastName  string
+	Email     string
+	DB        Database
+}
+
+// Session contains session data
 type Session struct {
 	token         string
 	user          *User
 	queries       map[string][]ongrid2.Query
 	transactionID int
-	db            *sqlx.DB
+	dbData        *sqlx.DB
+	dbConfig      *sqlx.DB
 	config        *ongrid2.ConfigObject
 }
 
@@ -98,6 +114,7 @@ type DBHandler struct {
 
 // NewDBHandler ...
 func NewDBHandler() *DBHandler {
+	fmt.Println("new db process create")
 	return &DBHandler{}
 }
 
@@ -107,6 +124,7 @@ type OngridHandler struct {
 
 // NewOngridHandler ...
 func NewOngridHandler() *OngridHandler {
+	fmt.Println("new ongrid process create")
 	return &OngridHandler{}
 }
 
@@ -174,7 +192,8 @@ func (p *OngridHandler) Disconnect(authToken string) error {
 	}
 
 	//dbOnGrid.MustExec("update sys$sessions set active = 0, closed_at = ? where token = ? and active = 1", time.Now(), authToken)
-	sessions[sessionID].db.Close()
+	sessions[sessionID].dbData.Close()
+	sessions[sessionID].dbConfig.Close()
 	dbOnGrid.Close()
 	mongoConnection.CloseConnection()
 
@@ -204,7 +223,7 @@ func (p *DBHandler) ExecuteSelectQuery(authToken string, query *ongrid2.Query) (
 
 	start := time.Now()
 
-	rows, err := sessions[sessionID].db.NamedQuery(query.Sql, getParams(query))
+	rows, err := sessions[sessionID].dbData.NamedQuery(query.Sql, getParams(query))
 	if err != nil {
 		return nil, fmt.Errorf("ExecuteSelectQuery error: %v", err)
 	}
@@ -291,7 +310,7 @@ func (p *DBHandler) ExecuteNonSelectQuery(authToken string, query *ongrid2.Query
 		return err
 	}
 
-	_, err = sessions[sessionID].db.NamedExec(query.Sql, getParams(query))
+	_, err = sessions[sessionID].dbData.NamedExec(query.Sql, getParams(query))
 	if err != nil {
 		log.Printf("ExecuteNonSelectQuery error: %v", err)
 	}
@@ -325,7 +344,7 @@ func (p *DBHandler) FinishBatchExecution(authToken string, batchID string, condi
 		return "", err
 	}
 
-	tx := sessions[sessionID].db.MustBegin()
+	tx := sessions[sessionID].dbData.MustBegin()
 	for _, query := range sessions[sessionID].queries[batchID] {
 		_, err := tx.NamedExec(query.Sql, getParams(&query))
 		if err != nil {
@@ -334,7 +353,7 @@ func (p *DBHandler) FinishBatchExecution(authToken string, batchID string, condi
 	}
 	tx.Commit()
 
-	_, err = sessions[sessionID].db.NamedExec(onSuccess.Sql, getParams(onSuccess))
+	_, err = sessions[sessionID].dbData.NamedExec(onSuccess.Sql, getParams(onSuccess))
 	if err != nil {
 		return "", fmt.Errorf("FinishBatchExecute, onSuccess error: query: %s - %v", onSuccess.Sql, err)
 	}
@@ -348,7 +367,7 @@ func (p *DBHandler) BatchExecute(authToken string, queries []*ongrid2.Query, con
 	if err != nil {
 		return "", err
 	}
-	tx := sessions[sessionID].db.MustBegin()
+	tx := sessions[sessionID].dbData.MustBegin()
 	for _, query := range queries {
 		_, err := tx.NamedExec(query.Sql, getParams(query))
 		if err != nil {
@@ -357,7 +376,7 @@ func (p *DBHandler) BatchExecute(authToken string, queries []*ongrid2.Query, con
 	}
 	tx.Commit()
 
-	_, err = sessions[sessionID].db.NamedExec(onSuccess.Sql, getParams(onSuccess))
+	_, err = sessions[sessionID].dbData.NamedExec(onSuccess.Sql, getParams(onSuccess))
 	if err != nil {
 		return "", fmt.Errorf("BatchExecute, onSuccess error: query: %s - %v", onSuccess.Sql, err)
 	}
@@ -370,7 +389,6 @@ func (p *DBHandler) BatchExecute(authToken string, queries []*ongrid2.Query, con
 
 // GetEvents ...
 func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Event, err error) {
-
 	if _, err = checkToken(authToken); err != nil {
 		return nil, err
 	}
@@ -548,31 +566,25 @@ func (p *OngridHandler) GetCentrifugoConf(authToken string) (*ongrid2.Centrifugo
 	4 - Template
 	5 - Menu
 	6 - Toolbar
-	7 - Procedure
+	7 - Procedure, database query
 	10 - Configuration
 */
 
 // dbConfigigObject ...
 type dbConfigigObject struct {
-	ID          int            `db:"OBJECTID"`
-	ObjType     int            `db:"OBJECTTYPE"`
-	ParamType   int            `db:"PARAMTYPE"`
-	Name        string         `db:"OBJECTNAME"`
-	Param       sql.NullString `db:"OBJECTPARAM"`
-	Value       sql.NullString `db:"PARAMVALUE"`
-	AddField    sql.NullString `db:"ADDFIELD"`
-	Owner       int            `db:"OBJECTOWNER"`
-	GrpVis      sql.NullString `db:"GRPVIS"`
-	GrpCreate   sql.NullString `db:"GRPCREATE"`
-	GrpEdit     sql.NullString `db:"GRPEDIT"`
-	GrpDelete   sql.NullString `db:"GRPDELETE"`
-	GrpReadonly sql.NullString `db:"GRPRONLY"`
-	GrpValue    sql.NullString `db:"GRPVALUE"`
-	Tag         sql.NullInt64  `db:"OBJECTTAG"`
+	ID        int            `db:"OBJECTID"`
+	ObjType   int            `db:"OBJECTTYPE"`
+	ParamType int            `db:"PARAMTYPE"`
+	Name      string         `db:"OBJECTNAME"`
+	Param     sql.NullString `db:"OBJECTPARAM"`
+	Value     sql.NullString `db:"PARAMVALUE"`
+	AddField  sql.NullString `db:"ADDFIELD"`
+	Owner     int            `db:"OBJECTOWNER"`
+	Tag       sql.NullInt64  `db:"OBJECTTAG"`
 }
 
 // GetConfiguration ...
-func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongrid2.ConfigObject, error) {
+func (p *OngridHandler) GetConfiguration(authToken string) (*ongrid2.ConfigObject, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
@@ -589,18 +601,16 @@ func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongri
 	var Configuration ongrid2.ConfigObject
 	baseObjects := make(map[int]*ongrid2.ConfigObject)
 
-	rows, err := sessions[sessionID].db.Queryx("select o.objectid, o.objecttype, o.paramtype, o.objectname, o.objectparam, o.paramvalue, o.addfield, "+
-		"coalesce(o.objectowner, 0) as objectowner, "+
-		"p1.a_visible as grpvis, p1.a_create as grpcreate, p1.a_edit as grpedit, p1.a_delete as grpdelete, "+
-		"p1.a_readonly as grpronly, p1.a_value as grpvalue, "+
-		"coalesce(o.objecttag, 0) as objecttag "+
-		"from igo$objects o "+
-		"left join igo$permission p1 on (p1.objectid = o.objectid and p1.userid in (select parent from igo$users where userid = ? )) "+
-		"where coalesce(o.isfolder, 0) = 0 and coalesce(o.deleted, 0) = 0 "+
-		"order by o.objectkind, coalesce(o.objectowner, 0), o.objecttag, o.objectname", userID)
+	rows, err := sessions[sessionID].dbConfig.Queryx("select objectid, objecttype, paramtype, objectname, objectparam, paramvalue, addfield, " +
+		"coalesce(objectowner, 0) as objectowner, " +
+		"coalesce(objecttag, 0) as objecttag " +
+		"from igo$objects " +
+		"order by coalesce(objectowner, 0), objecttag, objectname")
 	if err != nil {
 		log.Printf("GetConfiguration error: %v", err)
 	}
+
+	log.Println("Configuration loaded")
 
 	var objectCount int
 	var DBObject dbConfigigObject
@@ -611,20 +621,7 @@ func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongri
 			log.Printf("GetConfiguration, StructScan error: %v", err)
 		}
 
-		if obj, ok := baseObjects[DBObject.ID]; ok {
-			if DBObject.GrpCreate.Valid && DBObject.GrpCreate.String == "+" {
-				obj.Permission.ObjectCreate = true
-			}
-			if DBObject.GrpEdit.Valid && DBObject.GrpEdit.String == "+" {
-				obj.Permission.ObjectEdit = true
-			}
-			if DBObject.GrpDelete.Valid && DBObject.GrpDelete.String == "+" {
-				obj.Permission.ObjectEdit = true
-			}
-			if DBObject.GrpReadonly.Valid && DBObject.GrpReadonly.String == "-" {
-				obj.Permission.ObjectReadonly = false
-			}
-		} else {
+		if _, ok := baseObjects[DBObject.ID]; !ok {
 			object := ongrid2.ConfigObject{}
 
 			object.ID = int64(DBObject.ID)
@@ -637,12 +634,8 @@ func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongri
 
 			switch DBObject.ObjType {
 			case 2:
-				if DBObject.GrpValue.Valid && (len(DBObject.GrpValue.String) > 0) {
-					object.Value = DBObject.GrpValue.String
-				} else {
-					if DBObject.Value.Valid {
-						object.Value = DBObject.Value.String
-					}
+				if DBObject.Value.Valid {
+					object.Value = DBObject.Value.String
 				}
 			case 3:
 				// Type3 - events, value store in field AddField
@@ -661,51 +654,6 @@ func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongri
 
 			object.Owner = int64(DBObject.Owner)
 
-			// Permissions (dpFalse)
-
-			permission := ongrid2.ConfigPermission{}
-
-			permission.ObjectId = int64(DBObject.ID)
-			if DBObject.GrpValue.Valid {
-				permission.ObjectValue = DBObject.GrpValue.String
-			}
-
-			permission.ObjectVisible = true
-			permission.ObjectReadonly = true
-
-			if DBObject.GrpVis.Valid && DBObject.GrpVis.String == "+" {
-				permission.ObjectReadonly = true
-			}
-			if DBObject.GrpVis.Valid && DBObject.GrpVis.String == "-" {
-				permission.ObjectReadonly = false
-			}
-			if DBObject.GrpCreate.Valid && DBObject.GrpCreate.String == "+" {
-				permission.ObjectCreate = true
-			}
-			if DBObject.GrpCreate.Valid && DBObject.GrpCreate.String == "-" {
-				permission.ObjectCreate = false
-			}
-			if DBObject.GrpEdit.Valid && DBObject.GrpEdit.String == "+" {
-				permission.ObjectEdit = true
-			}
-			if DBObject.GrpEdit.Valid && DBObject.GrpEdit.String == "-" {
-				permission.ObjectEdit = false
-			}
-			if DBObject.GrpDelete.Valid && DBObject.GrpDelete.String == "+" {
-				permission.ObjectDelete = true
-			}
-			if DBObject.GrpDelete.Valid && DBObject.GrpDelete.String == "-" {
-				permission.ObjectDelete = false
-			}
-			if DBObject.GrpReadonly.Valid && DBObject.GrpReadonly.String == "+" {
-				permission.ObjectReadonly = true
-			}
-			if DBObject.GrpReadonly.Valid && DBObject.GrpReadonly.String == "-" {
-				permission.ObjectReadonly = false
-			}
-
-			object.Permission = &permission
-
 			baseObjects[DBObject.ID] = &object
 
 			if DBObject.Owner == 0 {
@@ -723,13 +671,19 @@ func (p *OngridHandler) GetConfiguration(authToken string, userID int64) (*ongri
 				switch object.Type {
 				case 2:
 					// property
-					baseObjects[DBObject.Owner].Props = append(baseObjects[DBObject.Owner].Props, &object)
+					if _, ok := baseObjects[DBObject.Owner]; ok {
+						baseObjects[DBObject.Owner].Props = append(baseObjects[DBObject.Owner].Props, &object)
+					}
 				case 3:
 					// event
-					baseObjects[DBObject.Owner].Events = append(baseObjects[DBObject.Owner].Events, &object)
+					if _, ok := baseObjects[DBObject.Owner]; ok {
+						baseObjects[DBObject.Owner].Events = append(baseObjects[DBObject.Owner].Events, &object)
+					}
 				default:
 					// object
-					baseObjects[DBObject.Owner].Objects = append(baseObjects[DBObject.Owner].Objects, &object)
+					if _, ok := baseObjects[DBObject.Owner]; ok {
+						baseObjects[DBObject.Owner].Objects = append(baseObjects[DBObject.Owner].Objects, &object)
+					}
 				}
 			}
 			objectCount++
@@ -765,7 +719,7 @@ func (p *OngridHandler) GetProps(authToken string) (props []*ongrid2.ConfigProp,
 		return nil, err
 	}
 
-	rows, err := sessions[sessionID].db.Queryx("select id, objecttype, paramtype, proptype, pname, " +
+	rows, err := sessions[sessionID].dbConfig.Queryx("select id, objecttype, paramtype, proptype, pname, " +
 		"pcaption, ptype, pvalues, pdefault, paction from igo$props where isfolder = 0 " +
 		"order by objecttype")
 
@@ -805,133 +759,6 @@ func (p *OngridHandler) GetProps(authToken string) (props []*ongrid2.ConfigProp,
 	return
 }
 
-// DBConfigPermission ...
-type DBConfigPermission struct {
-	ID             int            `db:"ID"`
-	ObjectID       int            `db:"OBJECTID"`
-	UserID         int            `db:"USERID"`
-	ObjectVisible  string         `db:"A_VISIBLE"`
-	ObjectReadonly string         `db:"A_READONLY"`
-	ObjectCreate   string         `db:"A_CREATE"`
-	ObjectEdit     string         `db:"A_EDIT"`
-	ObjectDelete   string         `db:"A_DELETE"`
-	ObjectValue    sql.NullString `db:"A_VALUE"`
-}
-
-// GetPermissions ...
-func (p *OngridHandler) GetPermissions(authToken string, userID int64) ([]*ongrid2.ConfigPermission, error) {
-	sessionID, err := checkToken(authToken)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := sessions[sessionID].db.Queryx("select id, objectid, userid, a_visible, a_readonly, " +
-		"a_create, a_edit, a_delete, a_value from igo$permission")
-
-	if err != nil {
-		log.Printf("GetPermissions error: %v", err)
-		return nil, err
-	}
-
-	var DBPermission DBConfigPermission
-	permissions := []*ongrid2.ConfigPermission{}
-
-	for rows.Next() {
-		err = rows.StructScan(&DBPermission)
-		if err != nil {
-			log.Printf("GetPermissions, StructScan error: %v", err)
-			return nil, err
-		}
-
-		permission := ongrid2.ConfigPermission{}
-
-		permission.ID = int64(DBPermission.ID)
-		permission.ObjectId = int64(DBPermission.ObjectID)
-		permission.UserId = int64(DBPermission.UserID)
-		if DBPermission.ObjectVisible == "+" {
-			permission.ObjectVisible = true
-		}
-		if DBPermission.ObjectReadonly == "+" {
-			permission.ObjectReadonly = true
-		}
-		if DBPermission.ObjectCreate == "+" {
-			permission.ObjectCreate = true
-		}
-		if DBPermission.ObjectEdit == "+" {
-			permission.ObjectEdit = true
-		}
-		if DBPermission.ObjectDelete == "+" {
-			permission.ObjectDelete = true
-		}
-		if DBPermission.ObjectValue.Valid {
-			permission.ObjectValue = DBPermission.ObjectValue.String
-		}
-
-		permissions = append(permissions, &permission)
-	}
-
-	return permissions, nil
-}
-
-// SetPermission ...
-func (p *OngridHandler) SetPermission(authToken string, permission *ongrid2.ConfigPermission) error {
-	sessionID, err := checkToken(authToken)
-	if err != nil {
-		return err
-	}
-
-	permissionData := map[string]interface{}{}
-
-	if permission.ObjectVisible {
-		permissionData["avis"] = "+"
-	} else {
-		permissionData["avis"] = "-"
-	}
-	if permission.ObjectReadonly {
-		permissionData["aro"] = "+"
-	} else {
-		permissionData["aro"] = "-"
-	}
-	if permission.ObjectCreate {
-		permissionData["ac"] = "+"
-	} else {
-		permissionData["ac"] = "-"
-	}
-	if permission.ObjectEdit {
-		permissionData["ae"] = "+"
-	} else {
-		permissionData["ae"] = "-"
-	}
-	if permission.ObjectDelete {
-		permissionData["ad"] = "+"
-	} else {
-		permissionData["ad"] = "-"
-	}
-	permissionData["av"] = permission.ObjectValue
-
-	if permission.ID > 0 {
-		_, err := sessions[sessionID].db.NamedExec("update igo$permission set a_visible = :avis, a_readonly = :aro, "+
-			"a_create = :ac, a_edit = :ae, a_delete = :ad, a_value = :av",
-			permissionData)
-		if err != nil {
-			log.Printf("SetPermissions error: %v", err)
-			return err
-		}
-	} else {
-		permissionData["oid"] = permission.ObjectId
-		permissionData["uid"] = permission.UserId
-		_, err := sessions[sessionID].db.NamedExec("insert into igo$permission (objectid, userid, a_visible, a_readonly, "+
-			"a_create, a_edit, a_delete, a_value) values (:oid, :uid, :avis, :aro, :ac, :ae, :ad, :av)",
-			permissionData)
-		if err != nil {
-			log.Printf("SetPermissions error: %v", err)
-			return err
-		}
-	}
-
-	return nil
-}
-
 // GetUserPrivileges ...
 func (p *OngridHandler) GetUserPrivileges(authToken string, userID int64) ([]*ongrid2.Privilege, error) {
 	sessionID, err := checkToken(authToken)
@@ -940,7 +767,7 @@ func (p *OngridHandler) GetUserPrivileges(authToken string, userID int64) ([]*on
 	}
 
 	aclService := privileges.ACLService{}
-	aclService.Load(sessions[sessionID].db)
+	aclService.Load(sessions[sessionID].dbConfig)
 
 	privileges, err := aclService.GetACL(int(userID))
 	if err != nil {
@@ -948,6 +775,46 @@ func (p *OngridHandler) GetUserPrivileges(authToken string, userID int64) ([]*on
 	}
 
 	return privileges, nil
+}
+
+type dbUser struct {
+	id       int    `db:"ID"`
+	login    string `db:"LOGIN"`
+	fullName string `db:"FULLNAME"`
+}
+
+// GetUsers возвращает всех пользователей из таблицы og$users
+func (p *OngridHandler) GetUsers(authToken string) (users []*ongrid2.User, err error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := sessions[sessionID].dbConfig.Queryx("select id, login, fullname from og$users")
+	if err != nil {
+		log.Printf("GetUsers error: %v", err)
+		return
+	}
+
+	var DBUser dbUser
+
+	for rows.Next() {
+		err = rows.StructScan(&DBUser)
+		if err != nil {
+			log.Printf("GetProps, StructScan error: %v", err)
+			return
+		}
+
+		user := ongrid2.User{}
+
+		user.ID = int64(DBUser.id)
+		user.Login = DBUser.login
+		user.FullName = DBUser.fullName
+
+		users = append(users, &user)
+	}
+
+	return
 }
 
 /* Misc function */
@@ -1020,7 +887,6 @@ func startSession(user *User) (authToken string, err error) {
 
 	var sessionID string
 	u4 := uuid.NewV4()
-	//sessionID = string(u4[:])
 	sessionID = u4.String()
 
 	// dbOnGrid.NamedExec("insert into sys$sessions (id, login, token, created_at, active) values (:id, :login, :token, :createdat, :active)",
@@ -1035,20 +901,45 @@ func startSession(user *User) (authToken string, err error) {
 
 	sessions[sessionID] = &Session{token: authToken, user: user}
 	log.Printf("Session id = %s\n", sessionID)
+
+	log.Printf("User: %v\n", user)
+	log.Printf("User.DB: %v\n", user.DB)
 	// Connect to client database
 
-	user.DBName = "SYSDBA:masterkey@localhost:3050/c:/database/ongrid/ongrid2data.fdb" // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! for TEST, comment for production !!!!!!!!!!!!!!!!!!!!
+	var dataDB, configDB string
 
-	log.Println(user.DBName)
-	sessions[sessionID].db, err = sqlx.Connect("firebirdsql", user.DBName)
-	log.Printf("Client db: %s\n", user.DBName)
+	dataDB = getDataConnectionString(user)
+	configDB = getConfigConnectionString(user)
+
+	log.Println(dataDB)
+	sessions[sessionID].dbData, err = sqlx.Connect("firebirdsql", dataDB)
+	log.Printf("Client data db: %s\n", dataDB)
 	if err != nil {
 		log.Fatalln("startSession: connect to client db: ", err)
 		return "", err
 	}
-	log.Println("startSession: Client database connection established")
+	log.Println("startSession: Client data-database connection established")
+	sessions[sessionID].dbConfig, err = sqlx.Connect("firebirdsql", configDB)
+	log.Printf("Client config db: %s\n", configDB)
+	if err != nil {
+		log.Fatalln("startSession: connect to client db: ", err)
+		return "", err
+	}
+	log.Println("startSession: Client config-database connection established")
 
 	return
+}
+
+func getDataConnectionString(user *User) string {
+	var conn string
+	conn = user.DB.user + ":" + user.DB.password + "@" + user.DB.host + ":" + strconv.Itoa(user.DB.port) + "/" + user.DB.path + "/" + user.DB.dataDB
+	return conn
+}
+
+func getConfigConnectionString(user *User) string {
+	var conn string
+	conn = user.DB.user + ":" + user.DB.password + "@" + user.DB.host + ":" + strconv.Itoa(user.DB.port) + "/" + user.DB.path + "/" + user.DB.configDB
+	return conn
 }
 
 // checkToken проверяет активность сессии и возвращает id сессии

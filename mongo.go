@@ -22,9 +22,11 @@ type docClient struct {
 	ID         bson.ObjectId   `bson:"_id"`
 	UserName   string          `bson:"username"`
 	Password   string          `bson:"password"`
+	FirstName  string          `bson:"firstName"`
+	LastName   string          `bson:"lastName"`
+	Email      string          `bson:"email"`
 	Database   docDatabase     `bson:"database"`
 	WorkPlaces []docWorkPlaces `bson:"workPlaces"`
-	DB         string          `bson:"db"`
 }
 
 type docWorkPlaces struct {
@@ -34,11 +36,13 @@ type docWorkPlaces struct {
 }
 
 type docDatabase struct {
-	host     string `bson:"host"`
-	port     int    `bson:"port"`
-	name     string `bson:"databaseFile"`
-	user     string `bson:"user"`
-	password string `bson:"password"`
+	Host       string `bson:"host"`
+	Port       int    `bson:"port"`
+	Path       string `bson:"path"`
+	User       string `bson:"user"`
+	Password   string `bson:"password"`
+	DataFile   string `bson:"dataFile"`
+	ConfigFile string `bson:"configFile"`
 }
 
 type docSession struct {
@@ -62,7 +66,7 @@ func NewMongoConnection(mgoConfig MongoConfig) (conn *MongoConnection) {
 }
 
 func (c *MongoConnection) createLocalConnection(mgoConfig MongoConfig) (err error) {
-	log.Println("Connecting to local mongo server...")
+	log.Println("Connecting to mongo server...")
 	c.originalSession, err = mgo.Dial(mgoConfig.host)
 	if err == nil {
 		log.Println("Connection established to mongo server")
@@ -115,11 +119,8 @@ func (c *MongoConnection) GetUserByMacAddr(macAddr string) (user User, err error
 		return
 	}
 
-	user.ID = result.ID.Hex()
-	user.Login = result.UserName
-	user.Password = result.Password
-	user.DBName = result.DB
-	fmt.Println(user.DBName)
+	user = fillUserFromResult(result)
+
 	return
 }
 
@@ -140,12 +141,29 @@ func (c *MongoConnection) GetUserByLogin(login string) (user User, err error) {
 		return
 	}
 
+	user = fillUserFromResult(result)
+
+	return
+}
+
+func fillUserFromResult(result docClient) User {
+	var user User
+
 	user.ID = result.ID.Hex()
 	user.Login = result.UserName
 	user.Password = result.Password
-	user.DBName = result.DB
-	fmt.Println(user.DBName)
-	return
+	user.FirstName = result.FirstName
+	user.LastName = result.LastName
+	user.Email = result.Email
+	user.DB.host = result.Database.Host
+	user.DB.port = result.Database.Port
+	user.DB.path = result.Database.Path
+	user.DB.user = result.Database.User
+	user.DB.password = result.Database.Password
+	user.DB.dataDB = result.Database.DataFile
+	user.DB.configDB = result.Database.ConfigFile
+
+	return user
 }
 
 // ClientAddWorkPlace ...
