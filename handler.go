@@ -33,7 +33,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/kylelemons/go-gypsy/yaml"
 	_ "github.com/nakagami/firebirdsql"
+	"github.com/sethvargo/go-password/password"
 	"github.com/twinj/uuid"
+	"gopkg.in/gomail.v2"
 )
 
 // DBConfig contains configuration for Firebird db
@@ -817,6 +819,38 @@ func (p *OngridHandler) GetUsers(authToken string) (users []*ongrid2.User, err e
 	return
 }
 
+// RegisterCustomer - create new customer in mongodb, send him email with a login and password
+func (p *OngridHandler) RegisterCustomer(email string, name string, phone string) (string, error) {
+	log.Printf("RegisterCustomer, name = %s, email = %s", name, email)
+	password, err := password.Generate(20, 8, 2, false, false)
+	if err != nil {
+		log.Printf("password generate: %v", err)
+		return "", err
+	}
+	log.Printf("Cutomer password: %s", password)
+
+	h := md5.New()
+	io.WriteString(h, password)
+	hpass := fmt.Sprintf("%x", h.Sum(nil))
+
+	customerID, err := mongoConnection.CreateCustomer(name, email, phone, hpass)
+	if err != nil {
+		return "", err
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", "verify@ongrid.xyz")
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Customer registration")
+	m.SetBody("text/html", "Hello "+name+"! <br> go to <a href='http://customers.ongrid.xyz'>Customer Service</a><br>Login: "+email+
+		"<br>Password: "+password)
+	d := gomail.NewDialer("smtp.yandex.ru", 465, "verify@ongrid.xyz", "ak0srulez")
+	if err = d.DialAndSend(m); err != nil {
+		return customerID, err
+	}
+	return customerID, nil
+}
+
 /* Misc function */
 
 func getParams(query *ongrid2.Query) map[string]interface{} {
@@ -877,6 +911,18 @@ func authLP(login, password string) (string, *User, error) {
 	return "", nil, fmt.Errorf("Auth failed. Login: %s", login)
 }
 
+func getDataConnectionString(user *User) string {
+	var conn string
+	conn = user.DB.user + ":" + user.DB.password + "@" + user.DB.host + ":" + strconv.Itoa(user.DB.port) + "/" + user.DB.path + "/" + user.DB.dataDB
+	return conn
+}
+
+func getConfigConnectionString(user *User) string {
+	var conn string
+	conn = user.DB.user + ":" + user.DB.password + "@" + user.DB.host + ":" + strconv.Itoa(user.DB.port) + "/" + user.DB.path + "/" + user.DB.configDB
+	return conn
+}
+
 func startSession(user *User) (authToken string, err error) {
 	htoken := md5.New()
 	io.WriteString(htoken, user.Login)
@@ -928,18 +974,6 @@ func startSession(user *User) (authToken string, err error) {
 	log.Println("startSession: Client config-database connection established")
 
 	return
-}
-
-func getDataConnectionString(user *User) string {
-	var conn string
-	conn = user.DB.user + ":" + user.DB.password + "@" + user.DB.host + ":" + strconv.Itoa(user.DB.port) + "/" + user.DB.path + "/" + user.DB.dataDB
-	return conn
-}
-
-func getConfigConnectionString(user *User) string {
-	var conn string
-	conn = user.DB.user + ":" + user.DB.password + "@" + user.DB.host + ":" + strconv.Itoa(user.DB.port) + "/" + user.DB.path + "/" + user.DB.configDB
-	return conn
 }
 
 // checkToken проверяет активность сессии и возвращает id сессии

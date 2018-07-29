@@ -32,6 +32,7 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "  i64 login(string login, string password)")
   fmt.Fprintln(os.Stderr, "   getUserPrivileges(string authToken, i64 userId)")
   fmt.Fprintln(os.Stderr, "   getUsers(string authToken)")
+  fmt.Fprintln(os.Stderr, "  string registerCustomer(string email, string name, string phone)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
@@ -182,19 +183,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg118 := flag.Arg(2)
-    mbTrans119 := thrift.NewTMemoryBufferLen(len(arg118))
-    defer mbTrans119.Close()
-    _, err120 := mbTrans119.WriteString(arg118)
-    if err120 != nil {
+    arg120 := flag.Arg(2)
+    mbTrans121 := thrift.NewTMemoryBufferLen(len(arg120))
+    defer mbTrans121.Close()
+    _, err122 := mbTrans121.WriteString(arg120)
+    if err122 != nil {
       Usage()
       return
     }
-    factory121 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt122 := factory121.GetProtocol(mbTrans119)
+    factory123 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt124 := factory123.GetProtocol(mbTrans121)
     argvalue1 := ongrid2.NewEvent()
-    err123 := argvalue1.Read(jsProt122)
-    if err123 != nil {
+    err125 := argvalue1.Read(jsProt124)
+    if err125 != nil {
       Usage()
       return
     }
@@ -251,8 +252,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err130 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err130 != nil {
+    argvalue1, err132 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err132 != nil {
       Usage()
       return
     }
@@ -268,6 +269,20 @@ func main() {
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
     fmt.Print(client.GetUsers(value0))
+    fmt.Print("\n")
+    break
+  case "registerCustomer":
+    if flag.NArg() - 1 != 3 {
+      fmt.Fprintln(os.Stderr, "RegisterCustomer requires 3 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    argvalue1 := flag.Arg(2)
+    value1 := argvalue1
+    argvalue2 := flag.Arg(3)
+    value2 := argvalue2
+    fmt.Print(client.RegisterCustomer(value0, value1, value2))
     fmt.Print("\n")
     break
   case "ping":

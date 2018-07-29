@@ -46,11 +46,19 @@ type docDatabase struct {
 }
 
 type docSession struct {
-	id        bson.ObjectId `bson:"_id"`
-	login     string        `bson:"login"`
-	token     string        `bson:"token"`
-	createdAt time.Time     `bson:"created"`
-	active    bool
+	ID        bson.ObjectId `bson:"_id"`
+	Login     string        `bson:"login"`
+	Token     string        `bson:"token"`
+	CreatedAt time.Time     `bson:"created"`
+	Active    bool
+}
+
+type docCustomer struct {
+	ID       bson.ObjectId `bson:"_id"`
+	Name     string        `bson:"name"`
+	Email    string        `bson:"email"`
+	Passowrd string        `bson:"password"`
+	Phone    string        `bson:"phone"`
 }
 
 // MongoConnection ...
@@ -75,10 +83,10 @@ func (c *MongoConnection) createLocalConnection(mgoConfig MongoConfig) (err erro
 			log.Printf("Error login to mongodb: %s\n", err.Error())
 		}
 		log.Println("Mongo login passed")
-		sessionCollection := c.originalSession.DB("ongrid").C("thrift-sessions")
-		if sessionCollection == nil {
-			err = errors.New("Collection could not be created, maybe need to create it manually")
-		}
+		// sessionCollection := c.originalSession.DB("ongrid").C("thrift-sessions")
+		// if sessionCollection == nil {
+		// 	err = errors.New("Collection could not be created, maybe need to create it manually")
+		// }
 	} else {
 		log.Printf("Error occured while creating mongodb connection: %s", err.Error())
 	}
@@ -92,10 +100,10 @@ func (c *MongoConnection) CloseConnection() {
 	}
 }
 
-func (c *MongoConnection) getSessionAndCollection() (session *mgo.Session, clientCollection *mgo.Collection, err error) {
+func (c *MongoConnection) getSessionAndCollection(collectionName string) (session *mgo.Session, clientCollection *mgo.Collection, err error) {
 	if c.originalSession != nil {
 		session = c.originalSession.Copy()
-		clientCollection = session.DB("ongrid").C("clients")
+		clientCollection = session.DB("ongrid").C(collectionName)
 	} else {
 		err = errors.New("No original session found")
 	}
@@ -107,7 +115,7 @@ func (c *MongoConnection) GetUserByMacAddr(macAddr string) (user User, err error
 	//create an empty document struct
 	result := docClient{}
 	//get a copy of the original session and a collection
-	session, clientCollection, err := c.getSessionAndCollection()
+	session, clientCollection, err := c.getSessionAndCollection("clients")
 	if err != nil {
 		return
 	}
@@ -129,7 +137,7 @@ func (c *MongoConnection) GetUserByLogin(login string) (user User, err error) {
 	//create an empty document struct
 	result := docClient{}
 	//get a copy of the original session and a collection
-	session, clientCollection, err := c.getSessionAndCollection()
+	session, clientCollection, err := c.getSessionAndCollection("clients")
 	if err != nil {
 		return
 	}
@@ -168,7 +176,7 @@ func fillUserFromResult(result docClient) User {
 
 // ClientAddWorkPlace ...
 func (c *MongoConnection) ClientAddWorkPlace(id string, wpName string, macAddr string) error {
-	session, clientCollection, err := c.getSessionAndCollection()
+	session, clientCollection, err := c.getSessionAndCollection("clients")
 	if err != nil {
 		return err
 	}
@@ -183,4 +191,41 @@ func (c *MongoConnection) ClientAddWorkPlace(id string, wpName string, macAddr s
 	}
 
 	return nil
+}
+
+// CreateCustomer ...
+func (c *MongoConnection) CreateCustomer(name string, email string, phone string, password string) (string, error) {
+	session, customerCollection, err := c.getSessionAndCollection("customers")
+	if err != nil {
+		return "", err
+	}
+	defer session.Close()
+
+	index := mgo.Index{
+		Key:      []string{"$text:email"},
+		Unique:   true,
+		DropDups: true,
+	}
+
+	customerCollection.EnsureIndex(index)
+
+	customerID := bson.NewObjectId()
+
+	err = customerCollection.Insert(
+		&docCustomer{
+			ID:       customerID,
+			Name:     name,
+			Email:    email,
+			Phone:    phone,
+			Passowrd: password,
+		},
+	)
+	if err != nil {
+		if mgo.IsDup(err) {
+			err = errors.New("Duplicate email exists")
+		}
+		return "", err
+	}
+
+	return customerID.Hex(), nil
 }
