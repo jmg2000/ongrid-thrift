@@ -22,6 +22,7 @@ package main
 import (
 	"crypto/md5"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -58,7 +59,7 @@ type Database struct {
 	configDB string
 }
 
-// User ...
+// User - Ongrid client that works with the desktop application
 type User struct {
 	ID        string
 	Login     string
@@ -69,7 +70,7 @@ type User struct {
 	DB        Database
 }
 
-// Session contains session data
+// Session contains client session data
 type Session struct {
 	token         string
 	user          *User
@@ -116,7 +117,6 @@ type DBHandler struct {
 
 // NewDBHandler ...
 func NewDBHandler() *DBHandler {
-	fmt.Println("new db process create")
 	return &DBHandler{}
 }
 
@@ -126,7 +126,6 @@ type OngridHandler struct {
 
 // NewOngridHandler ...
 func NewOngridHandler() *OngridHandler {
-	fmt.Println("new ongrid process create")
 	return &OngridHandler{}
 }
 
@@ -137,7 +136,7 @@ func (p *OngridHandler) Ping() (err error) {
 }
 
 // Connect - авторизация в системе по мак адресу
-func (p *OngridHandler) Connect(macAddr string) (token string, err error) {
+func (p *OngridHandler) Connect(login string, macAddr string) (token string, err error) {
 	dbOnGrid, err = sqlx.Connect("firebirdsql", dbConfig.user+":"+dbConfig.password+"@"+dbConfig.host+":"+dbConfig.port+"/"+dbConfig.path)
 	if err != nil {
 		log.Fatalln("Connect: ", err)
@@ -147,7 +146,7 @@ func (p *OngridHandler) Connect(macAddr string) (token string, err error) {
 
 	mongoConnection = NewMongoConnection(mgoConfig)
 
-	token, err = authMac(macAddr)
+	token, err = authMac(login, macAddr)
 	if err != nil {
 		dbOnGrid.Close()
 		mongoConnection.CloseConnection()
@@ -780,9 +779,10 @@ func (p *OngridHandler) GetUserPrivileges(authToken string, userID int64) ([]*on
 }
 
 type dbUser struct {
-	id       int    `db:"ID"`
-	login    string `db:"LOGIN"`
-	fullName string `db:"FULLNAME"`
+	ID       int    `db:"ID"`
+	Login    string `db:"LOGIN"`
+	FullName string `db:"FULLNAME"`
+	Password string `db:"PASSWORD"`
 }
 
 // GetUsers возвращает всех пользователей из таблицы og$users
@@ -809,9 +809,9 @@ func (p *OngridHandler) GetUsers(authToken string) (users []*ongrid2.User, err e
 
 		user := ongrid2.User{}
 
-		user.ID = int64(DBUser.id)
-		user.Login = DBUser.login
-		user.FullName = DBUser.fullName
+		user.ID = int64(DBUser.ID)
+		user.Login = DBUser.Login
+		user.FullName = DBUser.FullName
 
 		users = append(users, &user)
 	}
@@ -820,23 +820,32 @@ func (p *OngridHandler) GetUsers(authToken string) (users []*ongrid2.User, err e
 }
 
 // RegisterCustomer - create new customer in mongodb, send him email with a login and password
-func (p *OngridHandler) RegisterCustomer(email string, name string, phone string) (string, error) {
-	log.Printf("RegisterCustomer, name = %s, email = %s", name, email)
+func (p *OngridHandler) RegisterCustomer(authToken string, email string, name string, phone string) (string, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return "", err
+	}
+
+	log.Printf("RegisterCustomer, name = %s, email = %s\n", name, email)
+
 	password, err := password.Generate(20, 8, 2, false, false)
 	if err != nil {
 		log.Printf("password generate: %v", err)
 		return "", err
 	}
-	log.Printf("Cutomer password: %s", password)
+	log.Printf("Cutomer password: %s\n", password)
 
 	h := md5.New()
 	io.WriteString(h, password)
 	hpass := fmt.Sprintf("%x", h.Sum(nil))
 
-	customerID, err := mongoConnection.CreateCustomer(name, email, phone, hpass)
+	owner := sessions[sessionID].user.ID
+	customerID, err := mongoConnection.CreateCustomer(owner, name, email, phone, hpass)
 	if err != nil {
 		return "", err
 	}
+
+	log.Println("Customer created...")
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", "verify@ongrid.xyz")
@@ -849,6 +858,63 @@ func (p *OngridHandler) RegisterCustomer(email string, name string, phone string
 		return customerID, err
 	}
 	return customerID, nil
+}
+
+// CheckUser ...
+func (p *OngridHandler) CheckUser(authToken string, login string, password string) (*ongrid2.User, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+
+	DBUser := dbUser{}
+
+	err = sessions[sessionID].dbConfig.Get(&DBUser, "select first 1 id, login, fullname, password from og$users where login = ?", login)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			err = errors.New("User not found")
+		}
+		log.Printf("CheckUser: %v", err)
+		return nil, err
+	}
+
+	log.Printf("User: %v", DBUser)
+
+	if DBUser.Password != password {
+		return nil, errors.New("Password incorrect")
+	}
+
+	var user ongrid2.User
+
+	user.ID = int64(DBUser.ID)
+	user.Login = DBUser.Login
+	user.FullName = DBUser.FullName
+
+	return &user, nil
+}
+
+// SendMessageToCustomer ...
+func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64) (string, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := sessions[sessionID].dbConfig.NamedExec("insert into igo$messages (id, customer, body, parentid, direction)"+
+		" values (gen_id(GEN_IGO$MESSAGES_ID, 1), :customer, :body, :parentId, :direction) returning id",
+		map[string]interface{}{
+			"customer":  customerID,
+			"body":      body,
+			"parentid":  parentMessageID,
+			"direction": 1,
+		})
+	if err != nil {
+		log.Printf("insert into igo$message: %v", err)
+		return "", err
+	}
+	log.Printf("insert into igo$message, id: %v", res)
+
+	return "", nil
 }
 
 /* Misc function */
@@ -875,8 +941,8 @@ func getParams(query *ongrid2.Query) map[string]interface{} {
 
 /* Auth func */
 
-func authMac(macAddr string) (string, error) {
-	user, err := mongoConnection.GetUserByMacAddr(macAddr)
+func authMac(login string, macAddr string) (string, error) {
+	user, err := mongoConnection.GetUserByMacAddr(login, macAddr)
 	if err == nil {
 		authToken, err := startSession(&user)
 		if err != nil {

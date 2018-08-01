@@ -18,6 +18,7 @@ type MongoConfig struct {
 	dbName   string
 }
 
+// Ongrid client that works with the desktop application
 type docClient struct {
 	ID         bson.ObjectId   `bson:"_id"`
 	UserName   string          `bson:"username"`
@@ -55,7 +56,8 @@ type docSession struct {
 
 type docCustomer struct {
 	ID       bson.ObjectId `bson:"_id"`
-	Name     string        `bson:"name"`
+	Owner    bson.ObjectId `bson:"owner"`
+	Name     string        `bson:"username"`
 	Email    string        `bson:"email"`
 	Passowrd string        `bson:"password"`
 	Phone    string        `bson:"phone"`
@@ -111,7 +113,7 @@ func (c *MongoConnection) getSessionAndCollection(collectionName string) (sessio
 }
 
 // GetUserByMacAddr ...
-func (c *MongoConnection) GetUserByMacAddr(macAddr string) (user User, err error) {
+func (c *MongoConnection) GetUserByMacAddr(login string, macAddr string) (user User, err error) {
 	//create an empty document struct
 	result := docClient{}
 	//get a copy of the original session and a collection
@@ -121,7 +123,7 @@ func (c *MongoConnection) GetUserByMacAddr(macAddr string) (user User, err error
 	}
 	defer session.Close()
 	fmt.Printf("MacAddr: %s\n", macAddr)
-	err = clientCollection.Find(bson.M{"workPlaces.macAddr": macAddr}).One(&result)
+	err = clientCollection.Find(bson.M{"email": login, "workPlaces.macAddr": macAddr}).One(&result)
 	if err != nil {
 		log.Println(err)
 		return
@@ -143,7 +145,7 @@ func (c *MongoConnection) GetUserByLogin(login string) (user User, err error) {
 	}
 	defer session.Close()
 
-	err = clientCollection.Find(bson.M{"username": login}).One(&result)
+	err = clientCollection.Find(bson.M{"email": login}).One(&result)
 	if err != nil {
 		log.Println(err)
 		return
@@ -194,8 +196,8 @@ func (c *MongoConnection) ClientAddWorkPlace(id string, wpName string, macAddr s
 }
 
 // CreateCustomer ...
-func (c *MongoConnection) CreateCustomer(name string, email string, phone string, password string) (string, error) {
-	session, customerCollection, err := c.getSessionAndCollection("customers")
+func (c *MongoConnection) CreateCustomer(owner string, name string, email string, phone string, password string) (string, error) {
+	session, customerCollection, err := c.getSessionAndCollection("clients")
 	if err != nil {
 		return "", err
 	}
@@ -214,6 +216,7 @@ func (c *MongoConnection) CreateCustomer(name string, email string, phone string
 	err = customerCollection.Insert(
 		&docCustomer{
 			ID:       customerID,
+			Owner:    bson.ObjectIdHex(owner),
 			Name:     name,
 			Email:    email,
 			Phone:    phone,

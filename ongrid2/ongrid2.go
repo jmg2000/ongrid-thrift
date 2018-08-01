@@ -9510,8 +9510,9 @@ func (p *DBBatchExecuteResult) String() string {
 
 type Ongrid interface {
   // Parameters:
+  //  - Login
   //  - Macaddr
-  Connect(macaddr string) (r string, err error)
+  Connect(login string, macaddr string) (r string, err error)
   // Parameters:
   //  - AuthToken
   Disconnect(authToken string) (err error)
@@ -9550,10 +9551,22 @@ type Ongrid interface {
   //  - AuthToken
   GetUsers(authToken string) (r []*User, err error)
   // Parameters:
+  //  - AuthToken
   //  - Email
   //  - Name
   //  - Phone
-  RegisterCustomer(email string, name string, phone string) (r string, err error)
+  RegisterCustomer(authToken string, email string, name string, phone string) (r string, err error)
+  // Parameters:
+  //  - AuthToken
+  //  - Login
+  //  - Password
+  CheckUser(authToken string, login string, password string) (r *User, err error)
+  // Parameters:
+  //  - AuthToken
+  //  - CustomerId
+  //  - Body
+  //  - ParentMessageId
+  SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r string, err error)
   Ping() (err error)
 }
 
@@ -9584,13 +9597,14 @@ func NewOngridClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot 
 }
 
 // Parameters:
+//  - Login
 //  - Macaddr
-func (p *OngridClient) Connect(macaddr string) (r string, err error) {
-  if err = p.sendConnect(macaddr); err != nil { return }
+func (p *OngridClient) Connect(login string, macaddr string) (r string, err error) {
+  if err = p.sendConnect(login, macaddr); err != nil { return }
   return p.recvConnect()
 }
 
-func (p *OngridClient) sendConnect(macaddr string)(err error) {
+func (p *OngridClient) sendConnect(login string, macaddr string)(err error) {
   oprot := p.OutputProtocol
   if oprot == nil {
     oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -9601,6 +9615,7 @@ func (p *OngridClient) sendConnect(macaddr string)(err error) {
       return
   }
   args := OngridConnectArgs{
+  Login : login,
   Macaddr : macaddr,
   }
   if err = args.Write(oprot); err != nil {
@@ -10473,15 +10488,16 @@ func (p *OngridClient) recvGetUsers() (value []*User, err error) {
 }
 
 // Parameters:
+//  - AuthToken
 //  - Email
 //  - Name
 //  - Phone
-func (p *OngridClient) RegisterCustomer(email string, name string, phone string) (r string, err error) {
-  if err = p.sendRegisterCustomer(email, name, phone); err != nil { return }
+func (p *OngridClient) RegisterCustomer(authToken string, email string, name string, phone string) (r string, err error) {
+  if err = p.sendRegisterCustomer(authToken, email, name, phone); err != nil { return }
   return p.recvRegisterCustomer()
 }
 
-func (p *OngridClient) sendRegisterCustomer(email string, name string, phone string)(err error) {
+func (p *OngridClient) sendRegisterCustomer(authToken string, email string, name string, phone string)(err error) {
   oprot := p.OutputProtocol
   if oprot == nil {
     oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -10492,6 +10508,7 @@ func (p *OngridClient) sendRegisterCustomer(email string, name string, phone str
       return
   }
   args := OngridRegisterCustomerArgs{
+  AuthToken : authToken,
   Email : email,
   Name : name,
   Phone : phone,
@@ -10556,6 +10573,176 @@ func (p *OngridClient) recvRegisterCustomer() (value string, err error) {
   return
 }
 
+// Parameters:
+//  - AuthToken
+//  - Login
+//  - Password
+func (p *OngridClient) CheckUser(authToken string, login string, password string) (r *User, err error) {
+  if err = p.sendCheckUser(authToken, login, password); err != nil { return }
+  return p.recvCheckUser()
+}
+
+func (p *OngridClient) sendCheckUser(authToken string, login string, password string)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("checkUser", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := OngridCheckUserArgs{
+  AuthToken : authToken,
+  Login : login,
+  Password : password,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *OngridClient) recvCheckUser() (value *User, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "checkUser" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "checkUser failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "checkUser failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error103 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error104 error
+    error104, err = error103.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error104
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "checkUser failed: invalid message type")
+    return
+  }
+  result := OngridCheckUserResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
+// Parameters:
+//  - AuthToken
+//  - CustomerId
+//  - Body
+//  - ParentMessageId
+func (p *OngridClient) SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r string, err error) {
+  if err = p.sendSendMessageToCustomer(authToken, customerId, body, parentMessageId); err != nil { return }
+  return p.recvSendMessageToCustomer()
+}
+
+func (p *OngridClient) sendSendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64)(err error) {
+  oprot := p.OutputProtocol
+  if oprot == nil {
+    oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.OutputProtocol = oprot
+  }
+  p.SeqId++
+  if err = oprot.WriteMessageBegin("sendMessageToCustomer", thrift.CALL, p.SeqId); err != nil {
+      return
+  }
+  args := OngridSendMessageToCustomerArgs{
+  AuthToken : authToken,
+  CustomerId : customerId,
+  Body : body,
+  ParentMessageId : parentMessageId,
+  }
+  if err = args.Write(oprot); err != nil {
+      return
+  }
+  if err = oprot.WriteMessageEnd(); err != nil {
+      return
+  }
+  return oprot.Flush()
+}
+
+
+func (p *OngridClient) recvSendMessageToCustomer() (value string, err error) {
+  iprot := p.InputProtocol
+  if iprot == nil {
+    iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+    p.InputProtocol = iprot
+  }
+  method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+  if err != nil {
+    return
+  }
+  if method != "sendMessageToCustomer" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "sendMessageToCustomer failed: wrong method name")
+    return
+  }
+  if p.SeqId != seqId {
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "sendMessageToCustomer failed: out of sequence response")
+    return
+  }
+  if mTypeId == thrift.EXCEPTION {
+    error105 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error106 error
+    error106, err = error105.Read(iprot)
+    if err != nil {
+      return
+    }
+    if err = iprot.ReadMessageEnd(); err != nil {
+      return
+    }
+    err = error106
+    return
+  }
+  if mTypeId != thrift.REPLY {
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "sendMessageToCustomer failed: invalid message type")
+    return
+  }
+  result := OngridSendMessageToCustomerResult{}
+  if err = result.Read(iprot); err != nil {
+    return
+  }
+  if err = iprot.ReadMessageEnd(); err != nil {
+    return
+  }
+  if result.UserException != nil {
+    err = result.UserException
+    return 
+  }
+  value = result.GetSuccess()
+  return
+}
+
 func (p *OngridClient) Ping() (err error) {
   if err = p.sendPing(); err != nil { return }
   return p.recvPing()
@@ -10602,16 +10789,16 @@ func (p *OngridClient) recvPing() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error103 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error104 error
-    error104, err = error103.Read(iprot)
+    error107 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error108 error
+    error108, err = error107.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error104
+    err = error108
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10649,21 +10836,23 @@ func (p *OngridProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 
 func NewOngridProcessor(handler Ongrid) *OngridProcessor {
 
-  self105 := &OngridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self105.processorMap["connect"] = &ongridProcessorConnect{handler:handler}
-  self105.processorMap["disconnect"] = &ongridProcessorDisconnect{handler:handler}
-  self105.processorMap["addWorkPlace"] = &ongridProcessorAddWorkPlace{handler:handler}
-  self105.processorMap["getEvents"] = &ongridProcessorGetEvents{handler:handler}
-  self105.processorMap["postEvent"] = &ongridProcessorPostEvent{handler:handler}
-  self105.processorMap["getCentrifugoConf"] = &ongridProcessorGetCentrifugoConf{handler:handler}
-  self105.processorMap["getConfiguration"] = &ongridProcessorGetConfiguration{handler:handler}
-  self105.processorMap["getProps"] = &ongridProcessorGetProps{handler:handler}
-  self105.processorMap["login"] = &ongridProcessorLogin{handler:handler}
-  self105.processorMap["getUserPrivileges"] = &ongridProcessorGetUserPrivileges{handler:handler}
-  self105.processorMap["getUsers"] = &ongridProcessorGetUsers{handler:handler}
-  self105.processorMap["registerCustomer"] = &ongridProcessorRegisterCustomer{handler:handler}
-  self105.processorMap["ping"] = &ongridProcessorPing{handler:handler}
-return self105
+  self109 := &OngridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self109.processorMap["connect"] = &ongridProcessorConnect{handler:handler}
+  self109.processorMap["disconnect"] = &ongridProcessorDisconnect{handler:handler}
+  self109.processorMap["addWorkPlace"] = &ongridProcessorAddWorkPlace{handler:handler}
+  self109.processorMap["getEvents"] = &ongridProcessorGetEvents{handler:handler}
+  self109.processorMap["postEvent"] = &ongridProcessorPostEvent{handler:handler}
+  self109.processorMap["getCentrifugoConf"] = &ongridProcessorGetCentrifugoConf{handler:handler}
+  self109.processorMap["getConfiguration"] = &ongridProcessorGetConfiguration{handler:handler}
+  self109.processorMap["getProps"] = &ongridProcessorGetProps{handler:handler}
+  self109.processorMap["login"] = &ongridProcessorLogin{handler:handler}
+  self109.processorMap["getUserPrivileges"] = &ongridProcessorGetUserPrivileges{handler:handler}
+  self109.processorMap["getUsers"] = &ongridProcessorGetUsers{handler:handler}
+  self109.processorMap["registerCustomer"] = &ongridProcessorRegisterCustomer{handler:handler}
+  self109.processorMap["checkUser"] = &ongridProcessorCheckUser{handler:handler}
+  self109.processorMap["sendMessageToCustomer"] = &ongridProcessorSendMessageToCustomer{handler:handler}
+  self109.processorMap["ping"] = &ongridProcessorPing{handler:handler}
+return self109
 }
 
 func (p *OngridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -10674,12 +10863,12 @@ func (p *OngridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, 
   }
   iprot.Skip(thrift.STRUCT)
   iprot.ReadMessageEnd()
-  x106 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x110 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-  x106.Write(oprot)
+  x110.Write(oprot)
   oprot.WriteMessageEnd()
   oprot.Flush()
-  return false, x106
+  return false, x110
 
 }
 
@@ -10703,7 +10892,7 @@ func (p *ongridProcessorConnect) Process(seqId int32, iprot, oprot thrift.TProto
   result := OngridConnectResult{}
 var retval string
   var err2 error
-  if retval, err2 = p.handler.Connect(args.Macaddr); err2 != nil {
+  if retval, err2 = p.handler.Connect(args.Login, args.Macaddr); err2 != nil {
   switch v := err2.(type) {
     case *UserException:
   result.UserException = v
@@ -11278,7 +11467,7 @@ func (p *ongridProcessorRegisterCustomer) Process(seqId int32, iprot, oprot thri
   result := OngridRegisterCustomerResult{}
 var retval string
   var err2 error
-  if retval, err2 = p.handler.RegisterCustomer(args.Email, args.Name, args.Phone); err2 != nil {
+  if retval, err2 = p.handler.RegisterCustomer(args.AuthToken, args.Email, args.Name, args.Phone); err2 != nil {
   switch v := err2.(type) {
     case *UserException:
   result.UserException = v
@@ -11294,6 +11483,112 @@ var retval string
     result.Success = &retval
 }
   if err2 = oprot.WriteMessageBegin("registerCustomer", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type ongridProcessorCheckUser struct {
+  handler Ongrid
+}
+
+func (p *ongridProcessorCheckUser) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := OngridCheckUserArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("checkUser", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := OngridCheckUserResult{}
+var retval *User
+  var err2 error
+  if retval, err2 = p.handler.CheckUser(args.AuthToken, args.Login, args.Password); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing checkUser: " + err2.Error())
+    oprot.WriteMessageBegin("checkUser", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("checkUser", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type ongridProcessorSendMessageToCustomer struct {
+  handler Ongrid
+}
+
+func (p *ongridProcessorSendMessageToCustomer) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := OngridSendMessageToCustomerArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("sendMessageToCustomer", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := OngridSendMessageToCustomerResult{}
+var retval string
+  var err2 error
+  if retval, err2 = p.handler.SendMessageToCustomer(args.AuthToken, args.CustomerId, args.Body, args.ParentMessageId); err2 != nil {
+  switch v := err2.(type) {
+    case *UserException:
+  result.UserException = v
+    default:
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing sendMessageToCustomer: " + err2.Error())
+    oprot.WriteMessageBegin("sendMessageToCustomer", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush()
+    return true, err2
+  }
+  } else {
+    result.Success = &retval
+}
+  if err2 = oprot.WriteMessageBegin("sendMessageToCustomer", thrift.REPLY, seqId); err2 != nil {
     err = err2
   }
   if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -11360,15 +11655,21 @@ func (p *ongridProcessorPing) Process(seqId int32, iprot, oprot thrift.TProtocol
 // HELPER FUNCTIONS AND STRUCTURES
 
 // Attributes:
+//  - Login
 //  - Macaddr
 type OngridConnectArgs struct {
-  Macaddr string `thrift:"macaddr,1" db:"macaddr" json:"macaddr"`
+  Login string `thrift:"login,1" db:"login" json:"login"`
+  Macaddr string `thrift:"macaddr,2" db:"macaddr" json:"macaddr"`
 }
 
 func NewOngridConnectArgs() *OngridConnectArgs {
   return &OngridConnectArgs{}
 }
 
+
+func (p *OngridConnectArgs) GetLogin() string {
+  return p.Login
+}
 
 func (p *OngridConnectArgs) GetMacaddr() string {
   return p.Macaddr
@@ -11390,6 +11691,10 @@ func (p *OngridConnectArgs) Read(iprot thrift.TProtocol) error {
       if err := p.ReadField1(iprot); err != nil {
         return err
       }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
     default:
       if err := iprot.Skip(fieldTypeId); err != nil {
         return err
@@ -11409,6 +11714,15 @@ func (p *OngridConnectArgs)  ReadField1(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadString(); err != nil {
   return thrift.PrependError("error reading field 1: ", err)
 } else {
+  p.Login = v
+}
+  return nil
+}
+
+func (p *OngridConnectArgs)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
   p.Macaddr = v
 }
   return nil
@@ -11419,6 +11733,7 @@ func (p *OngridConnectArgs) Write(oprot thrift.TProtocol) error {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
   if p != nil {
     if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
   }
   if err := oprot.WriteFieldStop(); err != nil {
     return thrift.PrependError("write field stop error: ", err) }
@@ -11428,12 +11743,22 @@ func (p *OngridConnectArgs) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *OngridConnectArgs) writeField1(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("macaddr", thrift.STRING, 1); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:macaddr: ", p), err) }
-  if err := oprot.WriteString(string(p.Macaddr)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.macaddr (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldBegin("login", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:login: ", p), err) }
+  if err := oprot.WriteString(string(p.Login)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.login (1) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:macaddr: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:login: ", p), err) }
+  return err
+}
+
+func (p *OngridConnectArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("macaddr", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:macaddr: ", p), err) }
+  if err := oprot.WriteString(string(p.Macaddr)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.macaddr (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:macaddr: ", p), err) }
   return err
 }
 
@@ -12212,11 +12537,11 @@ func (p *OngridGetEventsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*Event, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem107 := &Event{}
-    if err := _elem107.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem107), err)
+    _elem111 := &Event{}
+    if err := _elem111.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem111), err)
     }
-    p.Success = append(p.Success, _elem107)
+    p.Success = append(p.Success, _elem111)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13139,11 +13464,11 @@ func (p *OngridGetPropsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigProp, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem108 := &ConfigProp{}
-    if err := _elem108.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem108), err)
+    _elem112 := &ConfigProp{}
+    if err := _elem112.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem112), err)
     }
-    p.Success = append(p.Success, _elem108)
+    p.Success = append(p.Success, _elem112)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13653,11 +13978,11 @@ func (p *OngridGetUserPrivilegesResult)  ReadField0(iprot thrift.TProtocol) erro
   tSlice := make([]*Privilege, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem109 := &Privilege{}
-    if err := _elem109.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem109), err)
+    _elem113 := &Privilege{}
+    if err := _elem113.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem113), err)
     }
-    p.Success = append(p.Success, _elem109)
+    p.Success = append(p.Success, _elem113)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13889,11 +14214,11 @@ func (p *OngridGetUsersResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*User, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem110 := &User{}
-    if err := _elem110.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem110), err)
+    _elem114 := &User{}
+    if err := _elem114.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem114), err)
     }
-    p.Success = append(p.Success, _elem110)
+    p.Success = append(p.Success, _elem114)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13965,19 +14290,25 @@ func (p *OngridGetUsersResult) String() string {
 }
 
 // Attributes:
+//  - AuthToken
 //  - Email
 //  - Name
 //  - Phone
 type OngridRegisterCustomerArgs struct {
-  Email string `thrift:"email,1" db:"email" json:"email"`
-  Name string `thrift:"name,2" db:"name" json:"name"`
-  Phone string `thrift:"phone,3" db:"phone" json:"phone"`
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  Email string `thrift:"email,2" db:"email" json:"email"`
+  Name string `thrift:"name,3" db:"name" json:"name"`
+  Phone string `thrift:"phone,4" db:"phone" json:"phone"`
 }
 
 func NewOngridRegisterCustomerArgs() *OngridRegisterCustomerArgs {
   return &OngridRegisterCustomerArgs{}
 }
 
+
+func (p *OngridRegisterCustomerArgs) GetAuthToken() string {
+  return p.AuthToken
+}
 
 func (p *OngridRegisterCustomerArgs) GetEmail() string {
   return p.Email
@@ -14015,6 +14346,10 @@ func (p *OngridRegisterCustomerArgs) Read(iprot thrift.TProtocol) error {
       if err := p.ReadField3(iprot); err != nil {
         return err
       }
+    case 4:
+      if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
     default:
       if err := iprot.Skip(fieldTypeId); err != nil {
         return err
@@ -14034,7 +14369,7 @@ func (p *OngridRegisterCustomerArgs)  ReadField1(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadString(); err != nil {
   return thrift.PrependError("error reading field 1: ", err)
 } else {
-  p.Email = v
+  p.AuthToken = v
 }
   return nil
 }
@@ -14043,7 +14378,7 @@ func (p *OngridRegisterCustomerArgs)  ReadField2(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadString(); err != nil {
   return thrift.PrependError("error reading field 2: ", err)
 } else {
-  p.Name = v
+  p.Email = v
 }
   return nil
 }
@@ -14051,6 +14386,15 @@ func (p *OngridRegisterCustomerArgs)  ReadField2(iprot thrift.TProtocol) error {
 func (p *OngridRegisterCustomerArgs)  ReadField3(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadString(); err != nil {
   return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Name = v
+}
+  return nil
+}
+
+func (p *OngridRegisterCustomerArgs)  ReadField4(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 4: ", err)
 } else {
   p.Phone = v
 }
@@ -14064,6 +14408,7 @@ func (p *OngridRegisterCustomerArgs) Write(oprot thrift.TProtocol) error {
     if err := p.writeField1(oprot); err != nil { return err }
     if err := p.writeField2(oprot); err != nil { return err }
     if err := p.writeField3(oprot); err != nil { return err }
+    if err := p.writeField4(oprot); err != nil { return err }
   }
   if err := oprot.WriteFieldStop(); err != nil {
     return thrift.PrependError("write field stop error: ", err) }
@@ -14073,32 +14418,42 @@ func (p *OngridRegisterCustomerArgs) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *OngridRegisterCustomerArgs) writeField1(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("email", thrift.STRING, 1); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:email: ", p), err) }
-  if err := oprot.WriteString(string(p.Email)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.email (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:email: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
   return err
 }
 
 func (p *OngridRegisterCustomerArgs) writeField2(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("name", thrift.STRING, 2); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:name: ", p), err) }
-  if err := oprot.WriteString(string(p.Name)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.name (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldBegin("email", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:email: ", p), err) }
+  if err := oprot.WriteString(string(p.Email)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.email (2) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:name: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:email: ", p), err) }
   return err
 }
 
 func (p *OngridRegisterCustomerArgs) writeField3(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("phone", thrift.STRING, 3); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:phone: ", p), err) }
-  if err := oprot.WriteString(string(p.Phone)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.phone (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldBegin("name", thrift.STRING, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:name: ", p), err) }
+  if err := oprot.WriteString(string(p.Name)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.name (3) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:phone: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:name: ", p), err) }
+  return err
+}
+
+func (p *OngridRegisterCustomerArgs) writeField4(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("phone", thrift.STRING, 4); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:phone: ", p), err) }
+  if err := oprot.WriteString(string(p.Phone)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.phone (4) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:phone: ", p), err) }
   return err
 }
 
@@ -14240,6 +14595,592 @@ func (p *OngridRegisterCustomerResult) String() string {
     return "<nil>"
   }
   return fmt.Sprintf("OngridRegisterCustomerResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+//  - Login
+//  - Password
+type OngridCheckUserArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  Login string `thrift:"login,2" db:"login" json:"login"`
+  Password string `thrift:"password,3" db:"password" json:"password"`
+}
+
+func NewOngridCheckUserArgs() *OngridCheckUserArgs {
+  return &OngridCheckUserArgs{}
+}
+
+
+func (p *OngridCheckUserArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+
+func (p *OngridCheckUserArgs) GetLogin() string {
+  return p.Login
+}
+
+func (p *OngridCheckUserArgs) GetPassword() string {
+  return p.Password
+}
+func (p *OngridCheckUserArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *OngridCheckUserArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *OngridCheckUserArgs)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.Login = v
+}
+  return nil
+}
+
+func (p *OngridCheckUserArgs)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Password = v
+}
+  return nil
+}
+
+func (p *OngridCheckUserArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("checkUser_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *OngridCheckUserArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *OngridCheckUserArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("login", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:login: ", p), err) }
+  if err := oprot.WriteString(string(p.Login)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.login (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:login: ", p), err) }
+  return err
+}
+
+func (p *OngridCheckUserArgs) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("password", thrift.STRING, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:password: ", p), err) }
+  if err := oprot.WriteString(string(p.Password)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.password (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:password: ", p), err) }
+  return err
+}
+
+func (p *OngridCheckUserArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("OngridCheckUserArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type OngridCheckUserResult struct {
+  Success *User `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewOngridCheckUserResult() *OngridCheckUserResult {
+  return &OngridCheckUserResult{}
+}
+
+var OngridCheckUserResult_Success_DEFAULT *User
+func (p *OngridCheckUserResult) GetSuccess() *User {
+  if !p.IsSetSuccess() {
+    return OngridCheckUserResult_Success_DEFAULT
+  }
+return p.Success
+}
+var OngridCheckUserResult_UserException_DEFAULT *UserException
+func (p *OngridCheckUserResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return OngridCheckUserResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *OngridCheckUserResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *OngridCheckUserResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *OngridCheckUserResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *OngridCheckUserResult)  ReadField0(iprot thrift.TProtocol) error {
+  p.Success = &User{}
+  if err := p.Success.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+  }
+  return nil
+}
+
+func (p *OngridCheckUserResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *OngridCheckUserResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("checkUser_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *OngridCheckUserResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := p.Success.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *OngridCheckUserResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *OngridCheckUserResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("OngridCheckUserResult(%+v)", *p)
+}
+
+// Attributes:
+//  - AuthToken
+//  - CustomerId
+//  - Body
+//  - ParentMessageId
+type OngridSendMessageToCustomerArgs struct {
+  AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
+  CustomerId string `thrift:"customerId,2" db:"customerId" json:"customerId"`
+  Body string `thrift:"body,3" db:"body" json:"body"`
+  ParentMessageId int64 `thrift:"parentMessageId,4" db:"parentMessageId" json:"parentMessageId"`
+}
+
+func NewOngridSendMessageToCustomerArgs() *OngridSendMessageToCustomerArgs {
+  return &OngridSendMessageToCustomerArgs{}
+}
+
+
+func (p *OngridSendMessageToCustomerArgs) GetAuthToken() string {
+  return p.AuthToken
+}
+
+func (p *OngridSendMessageToCustomerArgs) GetCustomerId() string {
+  return p.CustomerId
+}
+
+func (p *OngridSendMessageToCustomerArgs) GetBody() string {
+  return p.Body
+}
+
+func (p *OngridSendMessageToCustomerArgs) GetParentMessageId() int64 {
+  return p.ParentMessageId
+}
+func (p *OngridSendMessageToCustomerArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    case 3:
+      if err := p.ReadField3(iprot); err != nil {
+        return err
+      }
+    case 4:
+      if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerArgs)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.AuthToken = v
+}
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerArgs)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.CustomerId = v
+}
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerArgs)  ReadField3(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Body = v
+}
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerArgs)  ReadField4(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadI64(); err != nil {
+  return thrift.PrependError("error reading field 4: ", err)
+} else {
+  p.ParentMessageId = v
+}
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("sendMessageToCustomer_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+    if err := p.writeField3(oprot); err != nil { return err }
+    if err := p.writeField4(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
+  if err := oprot.WriteString(string(p.AuthToken)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.authToken (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:authToken: ", p), err) }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerArgs) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("customerId", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:customerId: ", p), err) }
+  if err := oprot.WriteString(string(p.CustomerId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.customerId (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:customerId: ", p), err) }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerArgs) writeField3(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("body", thrift.STRING, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:body: ", p), err) }
+  if err := oprot.WriteString(string(p.Body)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.body (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:body: ", p), err) }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerArgs) writeField4(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("parentMessageId", thrift.I64, 4); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:parentMessageId: ", p), err) }
+  if err := oprot.WriteI64(int64(p.ParentMessageId)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.parentMessageId (4) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:parentMessageId: ", p), err) }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("OngridSendMessageToCustomerArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+//  - UserException
+type OngridSendMessageToCustomerResult struct {
+  Success *string `thrift:"success,0" db:"success" json:"success,omitempty"`
+  UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
+}
+
+func NewOngridSendMessageToCustomerResult() *OngridSendMessageToCustomerResult {
+  return &OngridSendMessageToCustomerResult{}
+}
+
+var OngridSendMessageToCustomerResult_Success_DEFAULT string
+func (p *OngridSendMessageToCustomerResult) GetSuccess() string {
+  if !p.IsSetSuccess() {
+    return OngridSendMessageToCustomerResult_Success_DEFAULT
+  }
+return *p.Success
+}
+var OngridSendMessageToCustomerResult_UserException_DEFAULT *UserException
+func (p *OngridSendMessageToCustomerResult) GetUserException() *UserException {
+  if !p.IsSetUserException() {
+    return OngridSendMessageToCustomerResult_UserException_DEFAULT
+  }
+return p.UserException
+}
+func (p *OngridSendMessageToCustomerResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *OngridSendMessageToCustomerResult) IsSetUserException() bool {
+  return p.UserException != nil
+}
+
+func (p *OngridSendMessageToCustomerResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if err := p.ReadField0(iprot); err != nil {
+        return err
+      }
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerResult)  ReadField0(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 0: ", err)
+} else {
+  p.Success = &v
+}
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerResult)  ReadField1(iprot thrift.TProtocol) error {
+  p.UserException = &UserException{}
+  if err := p.UserException.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
+  }
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("sendMessageToCustomer_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *OngridSendMessageToCustomerResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := oprot.WriteString(string(*p.Success)); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err) }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerResult) writeField1(oprot thrift.TProtocol) (err error) {
+  if p.IsSetUserException() {
+    if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
+    if err := p.UserException.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.UserException), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:userException: ", p), err) }
+  }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("OngridSendMessageToCustomerResult(%+v)", *p)
 }
 
 type OngridPingArgs struct {
