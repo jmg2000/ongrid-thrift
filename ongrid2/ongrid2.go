@@ -9566,7 +9566,7 @@ type Ongrid interface {
   //  - CustomerId
   //  - Body
   //  - ParentMessageId
-  SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r string, err error)
+  SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r int64, err error)
   Ping() (err error)
 }
 
@@ -10662,7 +10662,7 @@ func (p *OngridClient) recvCheckUser() (value *User, err error) {
 //  - CustomerId
 //  - Body
 //  - ParentMessageId
-func (p *OngridClient) SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r string, err error) {
+func (p *OngridClient) SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r int64, err error) {
   if err = p.sendSendMessageToCustomer(authToken, customerId, body, parentMessageId); err != nil { return }
   return p.recvSendMessageToCustomer()
 }
@@ -10693,7 +10693,7 @@ func (p *OngridClient) sendSendMessageToCustomer(authToken string, customerId st
 }
 
 
-func (p *OngridClient) recvSendMessageToCustomer() (value string, err error) {
+func (p *OngridClient) recvSendMessageToCustomer() (value int64, err error) {
   iprot := p.InputProtocol
   if iprot == nil {
     iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -11571,7 +11571,7 @@ func (p *ongridProcessorSendMessageToCustomer) Process(seqId int32, iprot, oprot
 
   iprot.ReadMessageEnd()
   result := OngridSendMessageToCustomerResult{}
-var retval string
+var retval int64
   var err2 error
   if retval, err2 = p.handler.SendMessageToCustomer(args.AuthToken, args.CustomerId, args.Body, args.ParentMessageId); err2 != nil {
   switch v := err2.(type) {
@@ -15054,7 +15054,7 @@ func (p *OngridSendMessageToCustomerArgs) String() string {
 //  - Success
 //  - UserException
 type OngridSendMessageToCustomerResult struct {
-  Success *string `thrift:"success,0" db:"success" json:"success,omitempty"`
+  Success *int64 `thrift:"success,0" db:"success" json:"success,omitempty"`
   UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
 }
 
@@ -15062,8 +15062,8 @@ func NewOngridSendMessageToCustomerResult() *OngridSendMessageToCustomerResult {
   return &OngridSendMessageToCustomerResult{}
 }
 
-var OngridSendMessageToCustomerResult_Success_DEFAULT string
-func (p *OngridSendMessageToCustomerResult) GetSuccess() string {
+var OngridSendMessageToCustomerResult_Success_DEFAULT int64
+func (p *OngridSendMessageToCustomerResult) GetSuccess() int64 {
   if !p.IsSetSuccess() {
     return OngridSendMessageToCustomerResult_Success_DEFAULT
   }
@@ -15121,7 +15121,7 @@ func (p *OngridSendMessageToCustomerResult) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *OngridSendMessageToCustomerResult)  ReadField0(iprot thrift.TProtocol) error {
-  if v, err := iprot.ReadString(); err != nil {
+  if v, err := iprot.ReadI64(); err != nil {
   return thrift.PrependError("error reading field 0: ", err)
 } else {
   p.Success = &v
@@ -15153,9 +15153,9 @@ func (p *OngridSendMessageToCustomerResult) Write(oprot thrift.TProtocol) error 
 
 func (p *OngridSendMessageToCustomerResult) writeField0(oprot thrift.TProtocol) (err error) {
   if p.IsSetSuccess() {
-    if err := oprot.WriteFieldBegin("success", thrift.STRING, 0); err != nil {
+    if err := oprot.WriteFieldBegin("success", thrift.I64, 0); err != nil {
       return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
-    if err := oprot.WriteString(string(*p.Success)); err != nil {
+    if err := oprot.WriteI64(int64(*p.Success)); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T.success (0) field write error: ", p), err) }
     if err := oprot.WriteFieldEnd(); err != nil {
       return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }

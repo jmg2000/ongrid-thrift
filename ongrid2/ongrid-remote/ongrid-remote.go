@@ -34,7 +34,7 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "   getUsers(string authToken)")
   fmt.Fprintln(os.Stderr, "  string registerCustomer(string authToken, string email, string name, string phone)")
   fmt.Fprintln(os.Stderr, "  User checkUser(string authToken, string login, string password)")
-  fmt.Fprintln(os.Stderr, "  string sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId)")
+  fmt.Fprintln(os.Stderr, "  i64 sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)

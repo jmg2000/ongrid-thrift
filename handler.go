@@ -894,27 +894,36 @@ func (p *OngridHandler) CheckUser(authToken string, login string, password strin
 }
 
 // SendMessageToCustomer ...
-func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64) (string, error) {
+func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64) (int64, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
-		return "", err
+		return -1, err
+	}
+	var lastID int64
+	err = sessions[sessionID].dbData.Get(&lastID, "select gen_id(GEN_IGO$MESSAGES_ID, 1) from rdb$database")
+	if err != nil {
+		log.Printf("select gen_id: %v", err)
+		return -1, err
 	}
 
-	res, err := sessions[sessionID].dbConfig.NamedExec("insert into igo$messages (id, customer, body, parentid, direction)"+
-		" values (gen_id(GEN_IGO$MESSAGES_ID, 1), :customer, :body, :parentId, :direction) returning id",
+	_, err = sessions[sessionID].dbData.NamedExec("insert into igo$messages (id, customer, body, parentid, direction)"+
+		" values (:id, :customer, :body, :parentId, :direction) returning id",
 		map[string]interface{}{
+			"id":        lastID,
 			"customer":  customerID,
 			"body":      body,
-			"parentid":  parentMessageID,
+			"parentId":  parentMessageID,
 			"direction": 1,
 		})
 	if err != nil {
 		log.Printf("insert into igo$message: %v", err)
-		return "", err
+		return -1, err
 	}
-	log.Printf("insert into igo$message, id: %v", res)
 
-	return "", nil
+	log.Printf("insert into igo$message, id: %v", lastID)
+	// log.Printf("rows affected: %v", rowsAffected)
+
+	return lastID, nil
 }
 
 /* Misc function */
