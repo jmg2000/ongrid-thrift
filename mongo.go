@@ -55,12 +55,12 @@ type docSession struct {
 }
 
 type docCustomer struct {
-	ID       bson.ObjectId `bson:"_id"`
-	Owner    bson.ObjectId `bson:"owner"`
-	Name     string        `bson:"username"`
-	Email    string        `bson:"email"`
-	Passowrd string        `bson:"password"`
-	Phone    string        `bson:"phone"`
+	ID       bson.ObjectId   `bson:"_id"`
+	Owners   []bson.ObjectId `bson:"owners"`
+	Name     string          `bson:"username"`
+	Email    string          `bson:"email"`
+	Passowrd string          `bson:"password"`
+	Phone    string          `bson:"phone"`
 }
 
 // MongoConnection ...
@@ -212,11 +212,13 @@ func (c *MongoConnection) CreateCustomer(owner string, name string, email string
 	customerCollection.EnsureIndex(index)
 
 	customerID := bson.NewObjectId()
+	var owners []bson.ObjectId
+	owners = append(owners, bson.ObjectIdHex(owner))
 
 	err = customerCollection.Insert(
 		&docCustomer{
 			ID:       customerID,
-			Owner:    bson.ObjectIdHex(owner),
+			Owners:   owners,
 			Name:     name,
 			Email:    email,
 			Phone:    phone,

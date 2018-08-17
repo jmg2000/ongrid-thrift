@@ -389,8 +389,9 @@ func (p *DBHandler) BatchExecute(authToken string, queries []*ongrid2.Query, con
 /* Other function */
 
 // GetEvents ...
-func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Event, err error) {
-	if _, err = checkToken(authToken); err != nil {
+func (p *OngridHandler) GetEvents(authToken string, last int64) (events []*ongrid2.Event, err error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
 		return nil, err
 	}
 
@@ -398,21 +399,9 @@ func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Eve
 
 	var rows *sqlx.Rows
 
-	if len(last) == 32 {
-		var createdAt time.Time
-		err = dbOnGrid.QueryRowx("select created_at from sys$events where id = ?", last).Scan(&createdAt)
-		if err != nil {
-			log.Printf("GetEvents: %v\n", err)
-			return
-		}
-		// пока считываем только реквесты (type = 1)
-		rows, err = dbOnGrid.Queryx("select * from sys$events where created_at > ? and type = 1", createdAt)
-	} else {
-		rows, err = dbOnGrid.Queryx("select * from sys$events where type = 1")
-	}
-
+	rows, err = sessions[sessionID].dbData.Queryx("select * from igo$events where id > ? and type = 4", last)
 	if err != nil {
-		log.Printf("GetEvents, select * from sys$events error: %v\n", err)
+		log.Printf("GetEvents, select * from igo$events error: %v\n", err)
 		return
 	}
 	defer rows.Close()
@@ -424,28 +413,57 @@ func (p *OngridHandler) GetEvents(authToken, last string) (events []*ongrid2.Eve
 			log.Printf("GetEvents, StructScan: %v\n", err)
 		}
 
-		rowsRq, err := dbOnGrid.Queryx("select * from sys$requests where id = ?", dbEvent.ObjectID)
-		if err != nil {
-			log.Printf("GetEvents: %v\n", err)
-			return nil, err
-		}
-		defer rowsRq.Close()
-
-		var dbRequest DBRequest
-		for rowsRq.Next() {
-			err = rowsRq.StructScan(&dbRequest)
+		if dbEvent.EventType == 4 {
+			rowsMsg, err := sessions[sessionID].dbData.Queryx("select * from igo$messages where id = ?", dbEvent.ObjectID)
 			if err != nil {
-				log.Printf("GetEvents, StructScan: %v\n", err)
+				log.Printf("GetEvents: %v\n", err)
+				return nil, err
 			}
-			event := ongrid2.Event{}
+			defer rowsMsg.Close()
 
-			event.ID = dbEvent.ID
-			event.Type = 1
-			event.Request, err = getRequest(dbEvent.ObjectID)
+			var dbMsg DBMessage
 
-			events = append(events, &event)
+			for rowsMsg.Next() {
+				err = rowsMsg.StructScan(&dbMsg)
+				if err != nil {
+					log.Printf("msg scan: %v\n", err)
+					return nil, err
+				}
+
+				event := ongrid2.Event{}
+
+				event.ID = int64(dbEvent.ID)
+				event.Type = ongrid2.EventType_MESSAGE
+				event.Message, err = getMessage(sessions[sessionID].dbData, dbEvent.ObjectID)
+
+				events = append(events, &event)
+			}
 		}
+
+		// rowsRq, err := dbOnGrid.Queryx("select * from sys$requests where id = ?", dbEvent.ObjectID)
+		// if err != nil {
+		// 	log.Printf("GetEvents: %v\n", err)
+		// 	return nil, err
+		// }
+		// defer rowsRq.Close()
+
+		// var dbRequest DBRequest
+		// for rowsRq.Next() {
+		// 	err = rowsRq.StructScan(&dbRequest)
+		// 	if err != nil {
+		// 		log.Printf("GetEvents, StructScan: %v\n", err)
+		// 	}
+		// 	event := ongrid2.Event{}
+
+		// 	event.ID = int64(dbEvent.ID)
+		// 	event.Type = 1
+		// event.Request, err = getRequest(dbEvent.ObjectID)
+
+		// 	events = append(events, &event)
+		// }
 	}
+
+	log.Printf("events: %v", events)
 
 	return
 }
@@ -551,7 +569,7 @@ func (p *OngridHandler) GetCentrifugoConf(authToken string) (*ongrid2.Centrifugo
 
 	var centrifugoConf ongrid2.CentrifugoConf
 
-	centrifugoConf.Host = "165.227.139.6"
+	centrifugoConf.Host = "178.128.207.49"
 	centrifugoConf.Port = 8000
 	centrifugoConf.Secret = "secret"
 

@@ -6,6 +6,8 @@ import (
 	"log"
 	"ongrid-thrift/ongrid2"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // DBAuth ...
@@ -98,9 +100,19 @@ type DBCompany struct {
 	RealAddress          sql.NullString `db:"REALADDRESS"`
 }
 
+// DBMessage ...
+type DBMessage struct {
+	ID        int           `db:"ID"`
+	Customer  string        `db:"CUSTOMER"`
+	Body      string        `db:"BODY"`
+	ParentID  sql.NullInt64 `db:"PARENTID"`
+	Direction int           `db:"DIRECTION"`
+	CreatedAt time.Time     `db:"CREATED_AT"`
+}
+
 // DBEvent ...
 type DBEvent struct {
-	ID        string    `db:"ID"`
+	ID        int       `db:"ID"`
 	EventType int       `db:"TYPE"`
 	ObjectID  int       `db:"OBJECTID"`
 	CreatedAt time.Time `db:"CREATED_AT"`
@@ -287,6 +299,26 @@ func getCars() ([]*ongrid2.Car, error) {
 	}
 
 	return cars, nil
+}
+
+func getMessage(db *sqlx.DB, messageID int) (*ongrid2.Message, error) {
+	msg := ongrid2.Message{}
+	var dbMsg DBMessage
+
+	err := db.Get(&dbMsg, "select * from igo$messages where id = ?", messageID)
+	if err != nil {
+		log.Printf("db.Get from igo$messages error: %v", err)
+		return nil, err
+	}
+
+	msg.ID = int64(dbMsg.ID)
+	msg.Customer = dbMsg.Customer
+	msg.Body = dbMsg.Body
+	msg.ParentId = dbMsg.ParentID.Int64
+	msg.Direction = int32(dbMsg.Direction)
+	msg.CreatedAt = dbMsg.CreatedAt.Unix()
+
+	return &msg, nil
 }
 
 func getRequest(requestID int) (*ongrid2.Request, error) {

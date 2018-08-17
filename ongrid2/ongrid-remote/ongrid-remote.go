@@ -24,7 +24,7 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "  string connect(string login, string macaddr)")
   fmt.Fprintln(os.Stderr, "  void disconnect(string authToken)")
   fmt.Fprintln(os.Stderr, "  string addWorkPlace(string wpname, string macaddr, string login, string password)")
-  fmt.Fprintln(os.Stderr, "   getEvents(string authToken, string last)")
+  fmt.Fprintln(os.Stderr, "   getEvents(string authToken, i64 lastId)")
   fmt.Fprintln(os.Stderr, "  string postEvent(string authToken, Event event)")
   fmt.Fprintln(os.Stderr, "  CentrifugoConf getCentrifugoConf(string authToken)")
   fmt.Fprintln(os.Stderr, "  ConfigObject getConfiguration(string authToken)")
@@ -175,7 +175,11 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1 := flag.Arg(2)
+    argvalue1, err123 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err123 != nil {
+      Usage()
+      return
+    }
     value1 := argvalue1
     fmt.Print(client.GetEvents(value0, value1))
     fmt.Print("\n")
