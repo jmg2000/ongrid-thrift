@@ -175,8 +175,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err123 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err123 != nil {
+    argvalue1, err124 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err124 != nil {
       Usage()
       return
     }
@@ -191,19 +191,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg125 := flag.Arg(2)
-    mbTrans126 := thrift.NewTMemoryBufferLen(len(arg125))
-    defer mbTrans126.Close()
-    _, err127 := mbTrans126.WriteString(arg125)
-    if err127 != nil {
+    arg126 := flag.Arg(2)
+    mbTrans127 := thrift.NewTMemoryBufferLen(len(arg126))
+    defer mbTrans127.Close()
+    _, err128 := mbTrans127.WriteString(arg126)
+    if err128 != nil {
       Usage()
       return
     }
-    factory128 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt129 := factory128.GetProtocol(mbTrans126)
+    factory129 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt130 := factory129.GetProtocol(mbTrans127)
     argvalue1 := ongrid2.NewEvent()
-    err130 := argvalue1.Read(jsProt129)
-    if err130 != nil {
+    err131 := argvalue1.Read(jsProt130)
+    if err131 != nil {
       Usage()
       return
     }
@@ -260,8 +260,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err137 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err137 != nil {
+    argvalue1, err138 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err138 != nil {
       Usage()
       return
     }
@@ -320,8 +320,8 @@ func main() {
     value1 := argvalue1
     argvalue2 := flag.Arg(3)
     value2 := argvalue2
-    argvalue3, err149 := (strconv.ParseInt(flag.Arg(4), 10, 64))
-    if err149 != nil {
+    argvalue3, err150 := (strconv.ParseInt(flag.Arg(4), 10, 64))
+    if err150 != nil {
       Usage()
       return
     }

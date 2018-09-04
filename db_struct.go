@@ -100,6 +100,13 @@ type DBCompany struct {
 	RealAddress          sql.NullString `db:"REALADDRESS"`
 }
 
+// DBAttach ...
+type DBAttach struct {
+	MessageID        int    `db:"MESSAGEID"`
+	OriginalFilename string `db:"ORIGINALFILENAME"`
+	Filename         string `db:"FILENAME"`
+}
+
 // DBMessage ...
 type DBMessage struct {
 	ID        int           `db:"ID"`
@@ -108,6 +115,7 @@ type DBMessage struct {
 	ParentID  sql.NullInt64 `db:"PARENTID"`
 	Direction int           `db:"DIRECTION"`
 	CreatedAt time.Time     `db:"CREATED_AT"`
+	Attach    int32         `db:"ATTACH"`
 }
 
 // DBEvent ...
@@ -302,8 +310,11 @@ func getCars() ([]*ongrid2.Car, error) {
 }
 
 func getMessage(db *sqlx.DB, messageID int) (*ongrid2.Message, error) {
-	msg := ongrid2.Message{}
+	//msg := ongrid2.Message{}
+	var msg ongrid2.Message
 	var dbMsg DBMessage
+
+	log.Printf("getMessage, messageId = %v", messageID)
 
 	err := db.Get(&dbMsg, "select * from igo$messages where id = ?", messageID)
 	if err != nil {
@@ -317,6 +328,27 @@ func getMessage(db *sqlx.DB, messageID int) (*ongrid2.Message, error) {
 	msg.ParentId = dbMsg.ParentID.Int64
 	msg.Direction = int32(dbMsg.Direction)
 	msg.CreatedAt = dbMsg.CreatedAt.Unix()
+
+	if dbMsg.Attach == 1 {
+		rows, err := db.Queryx("select * from igo$attachments where messageid = ?", messageID)
+		if err != nil {
+			log.Printf("db.Get from igo$attachments error: %v", err)
+			return nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var dbAttach DBAttach
+			err = rows.StructScan(&dbAttach)
+			if err != nil {
+				log.Printf("igo$attachments, StructScan: %v", err)
+			}
+			var attach ongrid2.FileAttach
+			attach.OriginalFilename = dbAttach.OriginalFilename
+			attach.Filename = dbAttach.Filename
+			msg.Attachments = append(msg.Attachments, &attach)
+		}
+	}
 
 	return &msg, nil
 }

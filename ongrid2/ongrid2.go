@@ -4214,12 +4214,128 @@ func (p *Request) String() string {
 }
 
 // Attributes:
+//  - OriginalFilename
+//  - Filename
+type FileAttach struct {
+  OriginalFilename string `thrift:"originalFilename,1" db:"originalFilename" json:"originalFilename"`
+  Filename string `thrift:"filename,2" db:"filename" json:"filename"`
+}
+
+func NewFileAttach() *FileAttach {
+  return &FileAttach{}
+}
+
+
+func (p *FileAttach) GetOriginalFilename() string {
+  return p.OriginalFilename
+}
+
+func (p *FileAttach) GetFilename() string {
+  return p.Filename
+}
+func (p *FileAttach) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    case 2:
+      if err := p.ReadField2(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *FileAttach)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.OriginalFilename = v
+}
+  return nil
+}
+
+func (p *FileAttach)  ReadField2(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.Filename = v
+}
+  return nil
+}
+
+func (p *FileAttach) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("FileAttach"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+    if err := p.writeField2(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *FileAttach) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("originalFilename", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:originalFilename: ", p), err) }
+  if err := oprot.WriteString(string(p.OriginalFilename)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.originalFilename (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:originalFilename: ", p), err) }
+  return err
+}
+
+func (p *FileAttach) writeField2(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("filename", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:filename: ", p), err) }
+  if err := oprot.WriteString(string(p.Filename)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.filename (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:filename: ", p), err) }
+  return err
+}
+
+func (p *FileAttach) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("FileAttach(%+v)", *p)
+}
+
+// Attributes:
 //  - ID
 //  - Customer
 //  - Body
 //  - ParentId
 //  - Direction
 //  - CreatedAt
+//  - Attachments
 type Message struct {
   ID int64 `thrift:"id,1" db:"id" json:"id"`
   Customer string `thrift:"customer,2" db:"customer" json:"customer"`
@@ -4227,6 +4343,7 @@ type Message struct {
   ParentId int64 `thrift:"parentId,4" db:"parentId" json:"parentId"`
   Direction int32 `thrift:"direction,5" db:"direction" json:"direction"`
   CreatedAt int64 `thrift:"createdAt,6" db:"createdAt" json:"createdAt"`
+  Attachments []*FileAttach `thrift:"attachments,7" db:"attachments" json:"attachments"`
 }
 
 func NewMessage() *Message {
@@ -4256,6 +4373,10 @@ func (p *Message) GetDirection() int32 {
 
 func (p *Message) GetCreatedAt() int64 {
   return p.CreatedAt
+}
+
+func (p *Message) GetAttachments() []*FileAttach {
+  return p.Attachments
 }
 func (p *Message) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
@@ -4292,6 +4413,10 @@ func (p *Message) Read(iprot thrift.TProtocol) error {
       }
     case 6:
       if err := p.ReadField6(iprot); err != nil {
+        return err
+      }
+    case 7:
+      if err := p.ReadField7(iprot); err != nil {
         return err
       }
     default:
@@ -4363,6 +4488,26 @@ func (p *Message)  ReadField6(iprot thrift.TProtocol) error {
   return nil
 }
 
+func (p *Message)  ReadField7(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*FileAttach, 0, size)
+  p.Attachments =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem4 := &FileAttach{}
+    if err := _elem4.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem4), err)
+    }
+    p.Attachments = append(p.Attachments, _elem4)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
 func (p *Message) Write(oprot thrift.TProtocol) error {
   if err := oprot.WriteStructBegin("Message"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
@@ -4373,6 +4518,7 @@ func (p *Message) Write(oprot thrift.TProtocol) error {
     if err := p.writeField4(oprot); err != nil { return err }
     if err := p.writeField5(oprot); err != nil { return err }
     if err := p.writeField6(oprot); err != nil { return err }
+    if err := p.writeField7(oprot); err != nil { return err }
   }
   if err := oprot.WriteFieldStop(); err != nil {
     return thrift.PrependError("write field stop error: ", err) }
@@ -4438,6 +4584,25 @@ func (p *Message) writeField6(oprot thrift.TProtocol) (err error) {
   return thrift.PrependError(fmt.Sprintf("%T.createdAt (6) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write field end error 6:createdAt: ", p), err) }
+  return err
+}
+
+func (p *Message) writeField7(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("attachments", thrift.LIST, 7); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 7:attachments: ", p), err) }
+  if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Attachments)); err != nil {
+    return thrift.PrependError("error writing list begin: ", err)
+  }
+  for _, v := range p.Attachments {
+    if err := v.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+    }
+  }
+  if err := oprot.WriteListEnd(); err != nil {
+    return thrift.PrependError("error writing list end: ", err)
+  }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 7:attachments: ", p), err) }
   return err
 }
 
@@ -5011,11 +5176,11 @@ func (p *ConfigObject)  ReadField6(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigObject, 0, size)
   p.Props =  tSlice
   for i := 0; i < size; i ++ {
-    _elem4 := &ConfigObject{}
-    if err := _elem4.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem4), err)
+    _elem5 := &ConfigObject{}
+    if err := _elem5.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem5), err)
     }
-    p.Props = append(p.Props, _elem4)
+    p.Props = append(p.Props, _elem5)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -5031,11 +5196,11 @@ func (p *ConfigObject)  ReadField7(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigObject, 0, size)
   p.Events =  tSlice
   for i := 0; i < size; i ++ {
-    _elem5 := &ConfigObject{}
-    if err := _elem5.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem5), err)
+    _elem6 := &ConfigObject{}
+    if err := _elem6.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem6), err)
     }
-    p.Events = append(p.Events, _elem5)
+    p.Events = append(p.Events, _elem6)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -5051,11 +5216,11 @@ func (p *ConfigObject)  ReadField8(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigObject, 0, size)
   p.Objects =  tSlice
   for i := 0; i < size; i ++ {
-    _elem6 := &ConfigObject{}
-    if err := _elem6.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem6), err)
+    _elem7 := &ConfigObject{}
+    if err := _elem7.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem7), err)
     }
-    p.Objects = append(p.Objects, _elem6)
+    p.Objects = append(p.Objects, _elem7)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -5916,11 +6081,11 @@ func (p *Catalog)  ReadField6(iprot thrift.TProtocol) error {
   tSlice := make([]*Fields, 0, size)
   p.Fields =  tSlice
   for i := 0; i < size; i ++ {
-    _elem7 := &Fields{}
-    if err := _elem7.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem7), err)
+    _elem8 := &Fields{}
+    if err := _elem8.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem8), err)
     }
-    p.Fields = append(p.Fields, _elem7)
+    p.Fields = append(p.Fields, _elem8)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -7108,16 +7273,16 @@ func (p *DBClient) recvExecuteSelectQuery() (value *DataRowSet, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error8 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error9 error
-    error9, err = error8.Read(iprot)
+    error9 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error10 error
+    error10, err = error9.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error9
+    err = error10
     return
   }
   if mTypeId != thrift.REPLY {
@@ -7193,16 +7358,16 @@ func (p *DBClient) recvExecuteNonSelectQuery() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error10 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error11 error
-    error11, err = error10.Read(iprot)
+    error11 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error12 error
+    error12, err = error11.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error11
+    err = error12
     return
   }
   if mTypeId != thrift.REPLY {
@@ -7275,16 +7440,16 @@ func (p *DBClient) recvStartBatchExecution() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error12 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error13 error
-    error13, err = error12.Read(iprot)
+    error13 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error14 error
+    error14, err = error13.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error13
+    err = error14
     return
   }
   if mTypeId != thrift.REPLY {
@@ -7362,16 +7527,16 @@ func (p *DBClient) recvAddQuery() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error14 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error15 error
-    error15, err = error14.Read(iprot)
+    error15 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error16 error
+    error16, err = error15.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error15
+    err = error16
     return
   }
   if mTypeId != thrift.REPLY {
@@ -7450,16 +7615,16 @@ func (p *DBClient) recvFinishBatchExecution() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error16 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error17 error
-    error17, err = error16.Read(iprot)
+    error17 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error18 error
+    error18, err = error17.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error17
+    err = error18
     return
   }
   if mTypeId != thrift.REPLY {
@@ -7539,16 +7704,16 @@ func (p *DBClient) recvBatchExecute() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error18 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error19 error
-    error19, err = error18.Read(iprot)
+    error19 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error20 error
+    error20, err = error19.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error19
+    err = error20
     return
   }
   if mTypeId != thrift.REPLY {
@@ -7594,14 +7759,14 @@ func (p *DBProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 
 func NewDBProcessor(handler DB) *DBProcessor {
 
-  self20 := &DBProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self20.processorMap["executeSelectQuery"] = &dBProcessorExecuteSelectQuery{handler:handler}
-  self20.processorMap["executeNonSelectQuery"] = &dBProcessorExecuteNonSelectQuery{handler:handler}
-  self20.processorMap["startBatchExecution"] = &dBProcessorStartBatchExecution{handler:handler}
-  self20.processorMap["addQuery"] = &dBProcessorAddQuery{handler:handler}
-  self20.processorMap["finishBatchExecution"] = &dBProcessorFinishBatchExecution{handler:handler}
-  self20.processorMap["batchExecute"] = &dBProcessorBatchExecute{handler:handler}
-return self20
+  self21 := &DBProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self21.processorMap["executeSelectQuery"] = &dBProcessorExecuteSelectQuery{handler:handler}
+  self21.processorMap["executeNonSelectQuery"] = &dBProcessorExecuteNonSelectQuery{handler:handler}
+  self21.processorMap["startBatchExecution"] = &dBProcessorStartBatchExecution{handler:handler}
+  self21.processorMap["addQuery"] = &dBProcessorAddQuery{handler:handler}
+  self21.processorMap["finishBatchExecution"] = &dBProcessorFinishBatchExecution{handler:handler}
+  self21.processorMap["batchExecute"] = &dBProcessorBatchExecute{handler:handler}
+return self21
 }
 
 func (p *DBProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -7612,12 +7777,12 @@ func (p *DBProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err 
   }
   iprot.Skip(thrift.STRUCT)
   iprot.ReadMessageEnd()
-  x21 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x22 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-  x21.Write(oprot)
+  x22.Write(oprot)
   oprot.WriteMessageEnd()
   oprot.Flush()
-  return false, x21
+  return false, x22
 
 }
 
@@ -9507,11 +9672,11 @@ func (p *DBBatchExecuteArgs)  ReadField2(iprot thrift.TProtocol) error {
   tSlice := make([]*Query, 0, size)
   p.Queries =  tSlice
   for i := 0; i < size; i ++ {
-    _elem22 := &Query{}
-    if err := _elem22.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem22), err)
+    _elem23 := &Query{}
+    if err := _elem23.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem23), err)
     }
-    p.Queries = append(p.Queries, _elem22)
+    p.Queries = append(p.Queries, _elem23)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -9921,16 +10086,16 @@ func (p *OngridClient) recvConnect() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error79 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error80 error
-    error80, err = error79.Read(iprot)
+    error80 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error81 error
+    error81, err = error80.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error80
+    err = error81
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10001,16 +10166,16 @@ func (p *OngridClient) recvDisconnect() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error81 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error82 error
-    error82, err = error81.Read(iprot)
+    error82 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error83 error
+    error83, err = error82.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error82
+    err = error83
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10082,16 +10247,16 @@ func (p *OngridClient) recvAddWorkPlace() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error83 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error84 error
-    error84, err = error83.Read(iprot)
+    error84 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error85 error
+    error85, err = error84.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error84
+    err = error85
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10164,16 +10329,16 @@ func (p *OngridClient) recvGetEvents() (value []*Event, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error85 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error86 error
-    error86, err = error85.Read(iprot)
+    error86 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error87 error
+    error87, err = error86.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error86
+    err = error87
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10246,16 +10411,16 @@ func (p *OngridClient) recvPostEvent() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error87 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error88 error
-    error88, err = error87.Read(iprot)
+    error88 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error89 error
+    error89, err = error88.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error88
+    err = error89
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10326,16 +10491,16 @@ func (p *OngridClient) recvGetCentrifugoConf() (value *CentrifugoConf, err error
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error89 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error90 error
-    error90, err = error89.Read(iprot)
+    error90 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error91 error
+    error91, err = error90.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error90
+    err = error91
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10406,16 +10571,16 @@ func (p *OngridClient) recvGetConfiguration() (value *ConfigObject, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error91 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error92 error
-    error92, err = error91.Read(iprot)
+    error92 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error93 error
+    error93, err = error92.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error92
+    err = error93
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10486,16 +10651,16 @@ func (p *OngridClient) recvGetProps() (value []*ConfigProp, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error93 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error94 error
-    error94, err = error93.Read(iprot)
+    error94 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error95 error
+    error95, err = error94.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error94
+    err = error95
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10568,16 +10733,16 @@ func (p *OngridClient) recvLogin() (value int64, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error95 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error96 error
-    error96, err = error95.Read(iprot)
+    error96 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error97 error
+    error97, err = error96.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error96
+    err = error97
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10650,16 +10815,16 @@ func (p *OngridClient) recvGetUserPrivileges() (value []*Privilege, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error97 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error98 error
-    error98, err = error97.Read(iprot)
+    error98 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error99 error
+    error99, err = error98.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error98
+    err = error99
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10730,16 +10895,16 @@ func (p *OngridClient) recvGetUsers() (value []*User, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error99 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error100 error
-    error100, err = error99.Read(iprot)
+    error100 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error101 error
+    error101, err = error100.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error100
+    err = error101
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10816,16 +10981,16 @@ func (p *OngridClient) recvRegisterCustomer() (value string, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error101 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error102 error
-    error102, err = error101.Read(iprot)
+    error102 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error103 error
+    error103, err = error102.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error102
+    err = error103
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10900,16 +11065,16 @@ func (p *OngridClient) recvCheckUser() (value *User, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error103 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error104 error
-    error104, err = error103.Read(iprot)
+    error104 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error105 error
+    error105, err = error104.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error104
+    err = error105
     return
   }
   if mTypeId != thrift.REPLY {
@@ -10986,16 +11151,16 @@ func (p *OngridClient) recvSendMessageToCustomer() (value int64, err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error105 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error106 error
-    error106, err = error105.Read(iprot)
+    error106 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error107 error
+    error107, err = error106.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error106
+    err = error107
     return
   }
   if mTypeId != thrift.REPLY {
@@ -11063,16 +11228,16 @@ func (p *OngridClient) recvPing() (err error) {
     return
   }
   if mTypeId == thrift.EXCEPTION {
-    error107 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-    var error108 error
-    error108, err = error107.Read(iprot)
+    error108 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+    var error109 error
+    error109, err = error108.Read(iprot)
     if err != nil {
       return
     }
     if err = iprot.ReadMessageEnd(); err != nil {
       return
     }
-    err = error108
+    err = error109
     return
   }
   if mTypeId != thrift.REPLY {
@@ -11110,23 +11275,23 @@ func (p *OngridProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 
 func NewOngridProcessor(handler Ongrid) *OngridProcessor {
 
-  self109 := &OngridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self109.processorMap["connect"] = &ongridProcessorConnect{handler:handler}
-  self109.processorMap["disconnect"] = &ongridProcessorDisconnect{handler:handler}
-  self109.processorMap["addWorkPlace"] = &ongridProcessorAddWorkPlace{handler:handler}
-  self109.processorMap["getEvents"] = &ongridProcessorGetEvents{handler:handler}
-  self109.processorMap["postEvent"] = &ongridProcessorPostEvent{handler:handler}
-  self109.processorMap["getCentrifugoConf"] = &ongridProcessorGetCentrifugoConf{handler:handler}
-  self109.processorMap["getConfiguration"] = &ongridProcessorGetConfiguration{handler:handler}
-  self109.processorMap["getProps"] = &ongridProcessorGetProps{handler:handler}
-  self109.processorMap["login"] = &ongridProcessorLogin{handler:handler}
-  self109.processorMap["getUserPrivileges"] = &ongridProcessorGetUserPrivileges{handler:handler}
-  self109.processorMap["getUsers"] = &ongridProcessorGetUsers{handler:handler}
-  self109.processorMap["registerCustomer"] = &ongridProcessorRegisterCustomer{handler:handler}
-  self109.processorMap["checkUser"] = &ongridProcessorCheckUser{handler:handler}
-  self109.processorMap["sendMessageToCustomer"] = &ongridProcessorSendMessageToCustomer{handler:handler}
-  self109.processorMap["ping"] = &ongridProcessorPing{handler:handler}
-return self109
+  self110 := &OngridProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self110.processorMap["connect"] = &ongridProcessorConnect{handler:handler}
+  self110.processorMap["disconnect"] = &ongridProcessorDisconnect{handler:handler}
+  self110.processorMap["addWorkPlace"] = &ongridProcessorAddWorkPlace{handler:handler}
+  self110.processorMap["getEvents"] = &ongridProcessorGetEvents{handler:handler}
+  self110.processorMap["postEvent"] = &ongridProcessorPostEvent{handler:handler}
+  self110.processorMap["getCentrifugoConf"] = &ongridProcessorGetCentrifugoConf{handler:handler}
+  self110.processorMap["getConfiguration"] = &ongridProcessorGetConfiguration{handler:handler}
+  self110.processorMap["getProps"] = &ongridProcessorGetProps{handler:handler}
+  self110.processorMap["login"] = &ongridProcessorLogin{handler:handler}
+  self110.processorMap["getUserPrivileges"] = &ongridProcessorGetUserPrivileges{handler:handler}
+  self110.processorMap["getUsers"] = &ongridProcessorGetUsers{handler:handler}
+  self110.processorMap["registerCustomer"] = &ongridProcessorRegisterCustomer{handler:handler}
+  self110.processorMap["checkUser"] = &ongridProcessorCheckUser{handler:handler}
+  self110.processorMap["sendMessageToCustomer"] = &ongridProcessorSendMessageToCustomer{handler:handler}
+  self110.processorMap["ping"] = &ongridProcessorPing{handler:handler}
+return self110
 }
 
 func (p *OngridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -11137,12 +11302,12 @@ func (p *OngridProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, 
   }
   iprot.Skip(thrift.STRUCT)
   iprot.ReadMessageEnd()
-  x110 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x111 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-  x110.Write(oprot)
+  x111.Write(oprot)
   oprot.WriteMessageEnd()
   oprot.Flush()
-  return false, x110
+  return false, x111
 
 }
 
@@ -12811,11 +12976,11 @@ func (p *OngridGetEventsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*Event, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem111 := &Event{}
-    if err := _elem111.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem111), err)
+    _elem112 := &Event{}
+    if err := _elem112.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem112), err)
     }
-    p.Success = append(p.Success, _elem111)
+    p.Success = append(p.Success, _elem112)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -13738,11 +13903,11 @@ func (p *OngridGetPropsResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*ConfigProp, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem112 := &ConfigProp{}
-    if err := _elem112.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem112), err)
+    _elem113 := &ConfigProp{}
+    if err := _elem113.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem113), err)
     }
-    p.Success = append(p.Success, _elem112)
+    p.Success = append(p.Success, _elem113)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -14252,11 +14417,11 @@ func (p *OngridGetUserPrivilegesResult)  ReadField0(iprot thrift.TProtocol) erro
   tSlice := make([]*Privilege, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem113 := &Privilege{}
-    if err := _elem113.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem113), err)
+    _elem114 := &Privilege{}
+    if err := _elem114.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem114), err)
     }
-    p.Success = append(p.Success, _elem113)
+    p.Success = append(p.Success, _elem114)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -14488,11 +14653,11 @@ func (p *OngridGetUsersResult)  ReadField0(iprot thrift.TProtocol) error {
   tSlice := make([]*User, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem114 := &User{}
-    if err := _elem114.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem114), err)
+    _elem115 := &User{}
+    if err := _elem115.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem115), err)
     }
-    p.Success = append(p.Success, _elem114)
+    p.Success = append(p.Success, _elem115)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
