@@ -10005,7 +10005,8 @@ type Ongrid interface {
   //  - CustomerId
   //  - Body
   //  - ParentMessageId
-  SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r int64, err error)
+  //  - Attachments
+  SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64, attachments []*FileAttach) (r int64, err error)
   Ping() (err error)
 }
 
@@ -11101,12 +11102,13 @@ func (p *OngridClient) recvCheckUser() (value *User, err error) {
 //  - CustomerId
 //  - Body
 //  - ParentMessageId
-func (p *OngridClient) SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64) (r int64, err error) {
-  if err = p.sendSendMessageToCustomer(authToken, customerId, body, parentMessageId); err != nil { return }
+//  - Attachments
+func (p *OngridClient) SendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64, attachments []*FileAttach) (r int64, err error) {
+  if err = p.sendSendMessageToCustomer(authToken, customerId, body, parentMessageId, attachments); err != nil { return }
   return p.recvSendMessageToCustomer()
 }
 
-func (p *OngridClient) sendSendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64)(err error) {
+func (p *OngridClient) sendSendMessageToCustomer(authToken string, customerId string, body string, parentMessageId int64, attachments []*FileAttach)(err error) {
   oprot := p.OutputProtocol
   if oprot == nil {
     oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -11121,6 +11123,7 @@ func (p *OngridClient) sendSendMessageToCustomer(authToken string, customerId st
   CustomerId : customerId,
   Body : body,
   ParentMessageId : parentMessageId,
+  Attachments : attachments,
   }
   if err = args.Write(oprot); err != nil {
       return
@@ -12012,7 +12015,7 @@ func (p *ongridProcessorSendMessageToCustomer) Process(seqId int32, iprot, oprot
   result := OngridSendMessageToCustomerResult{}
 var retval int64
   var err2 error
-  if retval, err2 = p.handler.SendMessageToCustomer(args.AuthToken, args.CustomerId, args.Body, args.ParentMessageId); err2 != nil {
+  if retval, err2 = p.handler.SendMessageToCustomer(args.AuthToken, args.CustomerId, args.Body, args.ParentMessageId, args.Attachments); err2 != nil {
   switch v := err2.(type) {
     case *UserException:
   result.UserException = v
@@ -15319,11 +15322,13 @@ func (p *OngridCheckUserResult) String() string {
 //  - CustomerId
 //  - Body
 //  - ParentMessageId
+//  - Attachments
 type OngridSendMessageToCustomerArgs struct {
   AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
   CustomerId string `thrift:"customerId,2" db:"customerId" json:"customerId"`
   Body string `thrift:"body,3" db:"body" json:"body"`
   ParentMessageId int64 `thrift:"parentMessageId,4" db:"parentMessageId" json:"parentMessageId"`
+  Attachments []*FileAttach `thrift:"attachments,5" db:"attachments" json:"attachments"`
 }
 
 func NewOngridSendMessageToCustomerArgs() *OngridSendMessageToCustomerArgs {
@@ -15345,6 +15350,10 @@ func (p *OngridSendMessageToCustomerArgs) GetBody() string {
 
 func (p *OngridSendMessageToCustomerArgs) GetParentMessageId() int64 {
   return p.ParentMessageId
+}
+
+func (p *OngridSendMessageToCustomerArgs) GetAttachments() []*FileAttach {
+  return p.Attachments
 }
 func (p *OngridSendMessageToCustomerArgs) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
@@ -15373,6 +15382,10 @@ func (p *OngridSendMessageToCustomerArgs) Read(iprot thrift.TProtocol) error {
       }
     case 4:
       if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
+    case 5:
+      if err := p.ReadField5(iprot); err != nil {
         return err
       }
     default:
@@ -15426,6 +15439,26 @@ func (p *OngridSendMessageToCustomerArgs)  ReadField4(iprot thrift.TProtocol) er
   return nil
 }
 
+func (p *OngridSendMessageToCustomerArgs)  ReadField5(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*FileAttach, 0, size)
+  p.Attachments =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem116 := &FileAttach{}
+    if err := _elem116.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem116), err)
+    }
+    p.Attachments = append(p.Attachments, _elem116)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
 func (p *OngridSendMessageToCustomerArgs) Write(oprot thrift.TProtocol) error {
   if err := oprot.WriteStructBegin("sendMessageToCustomer_args"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
@@ -15434,6 +15467,7 @@ func (p *OngridSendMessageToCustomerArgs) Write(oprot thrift.TProtocol) error {
     if err := p.writeField2(oprot); err != nil { return err }
     if err := p.writeField3(oprot); err != nil { return err }
     if err := p.writeField4(oprot); err != nil { return err }
+    if err := p.writeField5(oprot); err != nil { return err }
   }
   if err := oprot.WriteFieldStop(); err != nil {
     return thrift.PrependError("write field stop error: ", err) }
@@ -15479,6 +15513,25 @@ func (p *OngridSendMessageToCustomerArgs) writeField4(oprot thrift.TProtocol) (e
   return thrift.PrependError(fmt.Sprintf("%T.parentMessageId (4) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write field end error 4:parentMessageId: ", p), err) }
+  return err
+}
+
+func (p *OngridSendMessageToCustomerArgs) writeField5(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("attachments", thrift.LIST, 5); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:attachments: ", p), err) }
+  if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Attachments)); err != nil {
+    return thrift.PrependError("error writing list begin: ", err)
+  }
+  for _, v := range p.Attachments {
+    if err := v.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+    }
+  }
+  if err := oprot.WriteListEnd(); err != nil {
+    return thrift.PrependError("error writing list end: ", err)
+  }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 5:attachments: ", p), err) }
   return err
 }
 

@@ -11,6 +11,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:453a7e02b77f0239a3a2c7ec8e32bdf0a9e5f3d7c7e3ecc4c560ecfcf0285b93"
+  name = "github.com/centrifugal/gocent"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "17898a2a08a934a0d4f8edc162ccb4b496546411"
+
+[[projects]]
+  branch = "master"
   digest = "1:42951d361293c2f7068ab0411afeb57856afba843fe681cea1e2731b47021222"
   name = "github.com/cznic/mathutil"
   packages = ["."]
@@ -78,11 +86,27 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:0e1e5f960c58fdc677212fcc70e55042a0084d367623e51afbdb568963832f5d"
+  name = "github.com/nu7hatch/gouuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[projects]]
+  branch = "master"
   digest = "1:4a2a0e0dcd6b00f8bd6ed74a206ed64b1d6a99c081a8ec5a61dd4942e2efbd21"
   name = "github.com/nyarla/go-crypt"
   packages = ["."]
   pruneopts = "UT"
   revision = "d9a5dc2b789bc330075d4b805d9b7c971f2865a1"
+
+[[projects]]
+  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:74e1e426348ad9d0165bf106ab29a0dc98c74c05998d36160003332579c66a87"
@@ -135,11 +159,13 @@
   analyzer-version = 1
   input-imports = [
     "git.apache.org/thrift.git/lib/go/thrift",
+    "github.com/centrifugal/gocent",
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/jmoiron/sqlx",
     "github.com/kylelemons/go-gypsy/yaml",
     "github.com/nakagami/firebirdsql",
+    "github.com/satori/go.uuid",
     "github.com/sethvargo/go-password/password",
     "github.com/twinj/uuid",
     "gopkg.in/gomail.v2",

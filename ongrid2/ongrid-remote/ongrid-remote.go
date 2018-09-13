@@ -34,7 +34,7 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "   getUsers(string authToken)")
   fmt.Fprintln(os.Stderr, "  string registerCustomer(string authToken, string email, string name, string phone)")
   fmt.Fprintln(os.Stderr, "  User checkUser(string authToken, string login, string password)")
-  fmt.Fprintln(os.Stderr, "  i64 sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId)")
+  fmt.Fprintln(os.Stderr, "  i64 sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId,  attachments)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
@@ -175,8 +175,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err124 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err124 != nil {
+    argvalue1, err125 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err125 != nil {
       Usage()
       return
     }
@@ -191,19 +191,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg126 := flag.Arg(2)
-    mbTrans127 := thrift.NewTMemoryBufferLen(len(arg126))
-    defer mbTrans127.Close()
-    _, err128 := mbTrans127.WriteString(arg126)
-    if err128 != nil {
+    arg127 := flag.Arg(2)
+    mbTrans128 := thrift.NewTMemoryBufferLen(len(arg127))
+    defer mbTrans128.Close()
+    _, err129 := mbTrans128.WriteString(arg127)
+    if err129 != nil {
       Usage()
       return
     }
-    factory129 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt130 := factory129.GetProtocol(mbTrans127)
+    factory130 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt131 := factory130.GetProtocol(mbTrans128)
     argvalue1 := ongrid2.NewEvent()
-    err131 := argvalue1.Read(jsProt130)
-    if err131 != nil {
+    err132 := argvalue1.Read(jsProt131)
+    if err132 != nil {
       Usage()
       return
     }
@@ -260,8 +260,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err138 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err138 != nil {
+    argvalue1, err139 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err139 != nil {
       Usage()
       return
     }
@@ -310,8 +310,8 @@ func main() {
     fmt.Print("\n")
     break
   case "sendMessageToCustomer":
-    if flag.NArg() - 1 != 4 {
-      fmt.Fprintln(os.Stderr, "SendMessageToCustomer requires 4 args")
+    if flag.NArg() - 1 != 5 {
+      fmt.Fprintln(os.Stderr, "SendMessageToCustomer requires 5 args")
       flag.Usage()
     }
     argvalue0 := flag.Arg(1)
@@ -320,13 +320,31 @@ func main() {
     value1 := argvalue1
     argvalue2 := flag.Arg(3)
     value2 := argvalue2
-    argvalue3, err150 := (strconv.ParseInt(flag.Arg(4), 10, 64))
-    if err150 != nil {
+    argvalue3, err151 := (strconv.ParseInt(flag.Arg(4), 10, 64))
+    if err151 != nil {
       Usage()
       return
     }
     value3 := argvalue3
-    fmt.Print(client.SendMessageToCustomer(value0, value1, value2, value3))
+    arg152 := flag.Arg(5)
+    mbTrans153 := thrift.NewTMemoryBufferLen(len(arg152))
+    defer mbTrans153.Close()
+    _, err154 := mbTrans153.WriteString(arg152)
+    if err154 != nil { 
+      Usage()
+      return
+    }
+    factory155 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt156 := factory155.GetProtocol(mbTrans153)
+    containerStruct4 := ongrid2.NewOngridSendMessageToCustomerArgs()
+    err157 := containerStruct4.ReadField5(jsProt156)
+    if err157 != nil {
+      Usage()
+      return
+    }
+    argvalue4 := containerStruct4.Attachments
+    value4 := argvalue4
+    fmt.Print(client.SendMessageToCustomer(value0, value1, value2, value3, value4))
     fmt.Print("\n")
     break
   case "ping":

@@ -16,3 +16,5 @@
 *.conf
 ongrid-thrift_linux_amd64
 attachments/
+uploads/
+

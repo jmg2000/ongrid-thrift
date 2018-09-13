@@ -78,6 +78,20 @@ type Session struct {
 
 `Ongrid.GetUserPrivileges(authToken string, userID int64) ([]*ongrid2.Privilege, error)` - запрос прав пользователя. Входящие параметры: authToken - токен авторизации, userID - id пользователя, для которого запрашивается конфигурация. Исходящие параметры: список разрешений для данного пользователя. Здесь используется метод aclService.GetACL из модуля privileges.
 
+`Ongrid.GetUsers(authToken string) (users []*ongrid2.User, err error)` - метод возвращает список всех пользователей системы. Пользователь представлен структурой: ongrid2.User:
+
+* Id int
+* Login string
+* FullName string
+
+`Ongrid.RegisterCustomer(authToken string, email string, name string, phone string) (string, error)` - метод регистрирует нового потребителя в системе и высылет на указанный email письмо с логином и паролем для входа на страницу потребителей.  Входные параметры: токен, email, имя потребителя и телефон. Метод возвращает UID созданного потребителя.
+
+`Ongrid.CheckUser(authToken string, login string, password string) (*ongrid2.User, error)` - метод проверяет суцествование пользователя с указаным логином и паролем и возвращает его или ошибку, если пользователь не найден.
+
+`Ongrid.SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64, attachments []*ongrid2.FileAttach) (int64, error)` - метод создания сообщения для потребителя. На входе: токен, id потребителя, само сообщение, id сообщения-родителя и список аттачей. Возвращает id созданного сообщения.
+
+
+
 ##### Вспомогательные функции
 
 `getParams(query *ongrid2.Query) map[string]interface{}` - Возвращает все параметры из объекта query, sql запроса.

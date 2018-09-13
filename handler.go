@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/centrifugal/gocent"
 	"github.com/jmoiron/sqlx"
 	"github.com/kylelemons/go-gypsy/yaml"
 	_ "github.com/nakagami/firebirdsql"
@@ -19,6 +20,12 @@ import (
 	"github.com/twinj/uuid"
 	"gopkg.in/gomail.v2"
 )
+
+type CentrifugoConfig struct {
+	host   string
+	port   string
+	secret string
+}
 
 // DBConfig contains configuration for Firebird db
 type DBConfig struct {
@@ -69,6 +76,7 @@ var sessions Sessions
 var dbOnGrid *sqlx.DB
 var dbConfig DBConfig
 var mgoConfig MongoConfig
+var cConfig CentrifugoConfig
 var mongoConnection *MongoConnection
 
 func init() {
@@ -88,6 +96,10 @@ func init() {
 	mgoConfig.passowrd, _ = config.Get("mgopass")
 	mgoConfig.host, _ = config.Get("mgohost")
 	mgoConfig.dbName, _ = config.Get("mgodb")
+
+	cConfig.host, _ = config.Get("chost")
+	cConfig.port, _ = config.Get("cport")
+	cConfig.secret, _ = config.Get("ckey")
 
 	sessions = make(Sessions)
 }
@@ -893,7 +905,7 @@ func (p *OngridHandler) CheckUser(authToken string, login string, password strin
 }
 
 // SendMessageToCustomer ...
-func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64) (int64, error) {
+func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64, attachments []*ongrid2.FileAttach) (int64, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return -1, err
@@ -919,8 +931,34 @@ func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID strin
 		return -1, err
 	}
 
+	for _, attach := range attachments {
+		_, err = sessions[sessionID].dbData.NamedExec("insert into igo$attachments (messageid, originalfilename, filename)"+
+			" values (:messageid, :ofname, :fname)",
+			map[string]interface{}{
+				"messageid": lastID,
+				"ofname":    attach.OriginalFilename,
+				"fname":     attach.Filename,
+			})
+		if err != nil {
+			log.Printf("insert into igo$attachments: %v", err)
+			return -1, err
+		}
+	}
+	//
+
 	log.Printf("insert into igo$message, id: %v", lastID)
 	// log.Printf("rows affected: %v", rowsAffected)
+
+	ch := "web"
+
+	c := gocent.NewClient("http://"+cConfig.host+":"+cConfig.port, cConfig.secret, 5*time.Second)
+
+	ok, err := c.Publish(ch, []byte(`{"id": `+strconv.Itoa(int(lastID))+`, "body": "`+body+`"}`))
+	if err != nil {
+		log.Println(err.Error())
+		return 0, err
+	}
+	fmt.Printf("Publish into channel %s successful: %v\n", ch, ok)
 
 	return lastID, nil
 }
