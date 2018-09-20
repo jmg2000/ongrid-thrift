@@ -234,3 +234,31 @@ func (c *MongoConnection) CreateCustomer(owner string, name string, email string
 
 	return customerID.Hex(), nil
 }
+
+// GetCustomersByOwnerID ...
+func (c *MongoConnection) GetCustomersByOwnerID(ownerID string) ([]*User, error) {
+	session, clientCollection, err := c.getSessionAndCollection("clients")
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close()
+
+	var result []docClient
+
+	fmt.Printf("ownerID: %s\n", ownerID)
+	err = clientCollection.Find(bson.M{"owners": bson.ObjectIdHex(ownerID)}).All(&result)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var customers []*User
+
+	for _, customer := range result {
+		fmt.Printf("Customer: %v", customer)
+		user := fillUserFromResult(customer)
+		customers = append(customers, &user)
+	}
+
+	return customers, nil
+}

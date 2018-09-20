@@ -904,35 +904,72 @@ func (p *OngridHandler) CheckUser(authToken string, login string, password strin
 	return &user, nil
 }
 
+type CustomerMessage struct {
+	customerID      string
+	body            string
+	parentMessageID int64
+	attachments     []*ongrid2.FileAttach
+}
+
 // SendMessageToCustomer ...
 func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64, attachments []*ongrid2.FileAttach) (int64, error) {
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return -1, err
 	}
+
+	msg := CustomerMessage{}
+	msg.customerID = customerID
+	msg.body = body
+	msg.parentMessageID = parentMessageID
+	msg.attachments = attachments
+
 	var lastID int64
-	err = sessions[sessionID].dbData.Get(&lastID, "select gen_id(GEN_IGO$MESSAGES_ID, 1) from rdb$database")
+
+	lastID, err = postMessage(sessions[sessionID].dbData, msg)
+
+	publishToCentrifugo("web", lastID, body)
+
+	return lastID, nil
+}
+
+func publishToCentrifugo(channel string, lastID int64, body string) error {
+	c := gocent.NewClient("http://"+cConfig.host+":"+cConfig.port, cConfig.secret, 5*time.Second)
+
+	ok, err := c.Publish(channel, []byte(`{"id": `+strconv.Itoa(int(lastID))+`, "body": "`+body+`"}`))
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	fmt.Printf("Publish into channel %s successful: %v\n", channel, ok)
+
+	return nil
+}
+
+func postMessage(db *sqlx.DB, msg CustomerMessage) (int64, error) {
+	var lastID int64
+	err := db.Get(&lastID, "select gen_id(GEN_IGO$MESSAGES_ID, 1) from rdb$database")
 	if err != nil {
 		log.Printf("select gen_id: %v", err)
 		return -1, err
 	}
-
-	_, err = sessions[sessionID].dbData.NamedExec("insert into igo$messages (id, customer, body, parentid, direction)"+
-		" values (:id, :customer, :body, :parentId, :direction) returning id",
+	_, err = db.NamedExec("insert into igo$messages (id, customer, body, parentid, direction, attach)"+
+		" values (:id, :customer, :body, :parentId, :direction, :attach) returning id",
 		map[string]interface{}{
 			"id":        lastID,
-			"customer":  customerID,
-			"body":      body,
-			"parentId":  parentMessageID,
+			"customer":  msg.customerID,
+			"body":      msg.body,
+			"parentId":  msg.parentMessageID,
 			"direction": 1,
+			"attach":    len(msg.attachments),
 		})
 	if err != nil {
 		log.Printf("insert into igo$message: %v", err)
 		return -1, err
 	}
 
-	for _, attach := range attachments {
-		_, err = sessions[sessionID].dbData.NamedExec("insert into igo$attachments (messageid, originalfilename, filename)"+
+	for _, attach := range msg.attachments {
+		_, err = db.NamedExec("insert into igo$attachments (messageid, originalfilename, filename)"+
 			" values (:messageid, :ofname, :fname)",
 			map[string]interface{}{
 				"messageid": lastID,
@@ -944,21 +981,8 @@ func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID strin
 			return -1, err
 		}
 	}
-	//
 
 	log.Printf("insert into igo$message, id: %v", lastID)
-	// log.Printf("rows affected: %v", rowsAffected)
-
-	ch := "web"
-
-	c := gocent.NewClient("http://"+cConfig.host+":"+cConfig.port, cConfig.secret, 5*time.Second)
-
-	ok, err := c.Publish(ch, []byte(`{"id": `+strconv.Itoa(int(lastID))+`, "body": "`+body+`"}`))
-	if err != nil {
-		log.Println(err.Error())
-		return 0, err
-	}
-	fmt.Printf("Publish into channel %s successful: %v\n", ch, ok)
 
 	return lastID, nil
 }
