@@ -904,6 +904,7 @@ func (p *OngridHandler) CheckUser(authToken string, login string, password strin
 	return &user, nil
 }
 
+// CustomerMessage ...
 type CustomerMessage struct {
 	customerID      string
 	body            string
@@ -931,6 +932,40 @@ func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID strin
 	publishToCentrifugo("web", lastID, body)
 
 	return lastID, nil
+}
+
+type DBFileName struct {
+	FileName string `db:"PARAMVALUE"`
+}
+
+// GetResourcesFileNames get all filenames of resources from configuration
+func (p *OngridHandler) GetResourcesFileNames(authToken string) (fileNames []string, err error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return nil, err
+	}
+	var filename DBFileName
+	rows, err := sessions[sessionID].dbConfig.Queryx("select ParamValue from igo$objects i where i.objecttype = 2 and i.paramvalue is not null " +
+		"and i.objectname in (select ii.pname from igo$props ii where ii.proptype = 2 and (ii.ptype = 7 or ii.ptype = 8))")
+	for rows.Next() {
+		err := rows.StructScan(&filename)
+		if err != nil {
+			log.Printf("GetResourcesFileNames: %v", err)
+		}
+		fileNames = append(fileNames, filename.FileName)
+	}
+
+	return
+}
+
+// GetUserID ...
+func (p *OngridHandler) GetUserID(authToken string) (string, error) {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return "", err
+	}
+
+	return sessions[sessionID].user.ID, nil
 }
 
 func publishToCentrifugo(channel string, lastID int64, body string) error {

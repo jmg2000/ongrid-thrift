@@ -35,6 +35,8 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "  string registerCustomer(string authToken, string email, string name, string phone)")
   fmt.Fprintln(os.Stderr, "  User checkUser(string authToken, string login, string password)")
   fmt.Fprintln(os.Stderr, "  i64 sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId,  attachments)")
+  fmt.Fprintln(os.Stderr, "   getResourcesFileNames(string authToken)")
+  fmt.Fprintln(os.Stderr, "  string getUserID(string authToken)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
@@ -175,8 +177,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err125 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err125 != nil {
+    argvalue1, err130 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err130 != nil {
       Usage()
       return
     }
@@ -191,19 +193,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg127 := flag.Arg(2)
-    mbTrans128 := thrift.NewTMemoryBufferLen(len(arg127))
-    defer mbTrans128.Close()
-    _, err129 := mbTrans128.WriteString(arg127)
-    if err129 != nil {
+    arg132 := flag.Arg(2)
+    mbTrans133 := thrift.NewTMemoryBufferLen(len(arg132))
+    defer mbTrans133.Close()
+    _, err134 := mbTrans133.WriteString(arg132)
+    if err134 != nil {
       Usage()
       return
     }
-    factory130 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt131 := factory130.GetProtocol(mbTrans128)
+    factory135 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt136 := factory135.GetProtocol(mbTrans133)
     argvalue1 := ongrid2.NewEvent()
-    err132 := argvalue1.Read(jsProt131)
-    if err132 != nil {
+    err137 := argvalue1.Read(jsProt136)
+    if err137 != nil {
       Usage()
       return
     }
@@ -260,8 +262,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err139 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err139 != nil {
+    argvalue1, err144 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err144 != nil {
       Usage()
       return
     }
@@ -320,31 +322,51 @@ func main() {
     value1 := argvalue1
     argvalue2 := flag.Arg(3)
     value2 := argvalue2
-    argvalue3, err151 := (strconv.ParseInt(flag.Arg(4), 10, 64))
-    if err151 != nil {
+    argvalue3, err156 := (strconv.ParseInt(flag.Arg(4), 10, 64))
+    if err156 != nil {
       Usage()
       return
     }
     value3 := argvalue3
-    arg152 := flag.Arg(5)
-    mbTrans153 := thrift.NewTMemoryBufferLen(len(arg152))
-    defer mbTrans153.Close()
-    _, err154 := mbTrans153.WriteString(arg152)
-    if err154 != nil { 
+    arg157 := flag.Arg(5)
+    mbTrans158 := thrift.NewTMemoryBufferLen(len(arg157))
+    defer mbTrans158.Close()
+    _, err159 := mbTrans158.WriteString(arg157)
+    if err159 != nil { 
       Usage()
       return
     }
-    factory155 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt156 := factory155.GetProtocol(mbTrans153)
+    factory160 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt161 := factory160.GetProtocol(mbTrans158)
     containerStruct4 := ongrid2.NewOngridSendMessageToCustomerArgs()
-    err157 := containerStruct4.ReadField5(jsProt156)
-    if err157 != nil {
+    err162 := containerStruct4.ReadField5(jsProt161)
+    if err162 != nil {
       Usage()
       return
     }
     argvalue4 := containerStruct4.Attachments
     value4 := argvalue4
     fmt.Print(client.SendMessageToCustomer(value0, value1, value2, value3, value4))
+    fmt.Print("\n")
+    break
+  case "getResourcesFileNames":
+    if flag.NArg() - 1 != 1 {
+      fmt.Fprintln(os.Stderr, "GetResourcesFileNames requires 1 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    fmt.Print(client.GetResourcesFileNames(value0))
+    fmt.Print("\n")
+    break
+  case "getUserID":
+    if flag.NArg() - 1 != 1 {
+      fmt.Fprintln(os.Stderr, "GetUserID requires 1 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    fmt.Print(client.GetUserID(value0))
     fmt.Print("\n")
     break
   case "ping":
