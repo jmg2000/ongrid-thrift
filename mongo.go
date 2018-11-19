@@ -34,6 +34,7 @@ type docWorkPlaces struct {
 	ID      bson.ObjectId `bson:"_id"`
 	WPName  string        `bson:"wpName"`
 	MacAddr string        `bson:"macAddr"`
+	Enabled bool          `bson:"enabled"`
 }
 
 type docDatabase struct {
@@ -129,6 +130,15 @@ func (c *MongoConnection) GetUserByMacAddr(login string, macAddr string) (user U
 		return
 	}
 
+	fmt.Printf("GetUserByMacAddr result, %v", result.WorkPlaces)
+
+	for _, workPlace := range result.WorkPlaces {
+		if workPlace.MacAddr == macAddr && !workPlace.Enabled {
+			err = errors.New("Workplace is disabled")
+			return
+		}
+	}
+
 	user = fillUserFromResult(result)
 
 	return
@@ -185,7 +195,7 @@ func (c *MongoConnection) ClientAddWorkPlace(id string, wpName string, macAddr s
 	defer session.Close()
 
 	query := bson.M{"_id": bson.ObjectIdHex(id)}
-	pushWorkPlace := bson.M{"$push": bson.M{"workPlaces": bson.M{"_id": bson.NewObjectId(), "wpName": wpName, "macAddr": macAddr}}}
+	pushWorkPlace := bson.M{"$push": bson.M{"workPlaces": bson.M{"_id": bson.NewObjectId(), "wpName": wpName, "macAddr": macAddr, "enabled": true}}}
 	err = clientCollection.Update(query, pushWorkPlace)
 	if err != nil {
 		log.Println(err)

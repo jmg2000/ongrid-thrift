@@ -912,6 +912,37 @@ type CustomerMessage struct {
 	attachments     []*ongrid2.FileAttach
 }
 
+// SendMessageToAllCustomers ...
+func (p *OngridHandler) SendMessageToAllCustomers(authToken string, body string, attachments []*ongrid2.FileAttach) error {
+	sessionID, err := checkToken(authToken)
+	if err != nil {
+		return err
+	}
+
+	var customers []*User
+	customers, err = mongoConnection.GetCustomersByOwnerID(sessions[sessionID].user.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, customer := range customers {
+		msg := CustomerMessage{}
+		msg.customerID = customer.ID
+		msg.body = body
+		msg.attachments = attachments
+
+		_, err = postMessage(sessions[sessionID].dbData, msg)
+		if err != nil {
+			log.Printf("postMessage: %v\n", err)
+			return err
+		}
+
+		publishToCentrifugo("web", 0, body)
+	}
+
+	return nil
+}
+
 // SendMessageToCustomer ...
 func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID string, body string, parentMessageID int64, attachments []*ongrid2.FileAttach) (int64, error) {
 	sessionID, err := checkToken(authToken)
@@ -934,6 +965,7 @@ func (p *OngridHandler) SendMessageToCustomer(authToken string, customerID strin
 	return lastID, nil
 }
 
+// DBFileName ...
 type DBFileName struct {
 	FileName string `db:"PARAMVALUE"`
 }
@@ -1056,7 +1088,8 @@ func authMac(login string, macAddr string) (string, error) {
 		return authToken, nil
 	}
 
-	return "", fmt.Errorf("AuthMac failed. MacAddr: %s", macAddr)
+	//return "", fmt.Errorf("AuthMac failed. MacAddr: %s", macAddr)
+	return "", fmt.Errorf(err.Error())
 }
 
 func authLP(login, password string) (string, *User, error) {

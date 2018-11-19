@@ -35,6 +35,7 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "  string registerCustomer(string authToken, string email, string name, string phone)")
   fmt.Fprintln(os.Stderr, "  User checkUser(string authToken, string login, string password)")
   fmt.Fprintln(os.Stderr, "  i64 sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId,  attachments)")
+  fmt.Fprintln(os.Stderr, "  void SendMessageToAllCustomers(string authToken, string body,  attachments)")
   fmt.Fprintln(os.Stderr, "   getResourcesFileNames(string authToken)")
   fmt.Fprintln(os.Stderr, "  string getUserID(string authToken)")
   fmt.Fprintln(os.Stderr, "  void ping()")
@@ -177,8 +178,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err130 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err130 != nil {
+    argvalue1, err133 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err133 != nil {
       Usage()
       return
     }
@@ -193,19 +194,19 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    arg132 := flag.Arg(2)
-    mbTrans133 := thrift.NewTMemoryBufferLen(len(arg132))
-    defer mbTrans133.Close()
-    _, err134 := mbTrans133.WriteString(arg132)
-    if err134 != nil {
+    arg135 := flag.Arg(2)
+    mbTrans136 := thrift.NewTMemoryBufferLen(len(arg135))
+    defer mbTrans136.Close()
+    _, err137 := mbTrans136.WriteString(arg135)
+    if err137 != nil {
       Usage()
       return
     }
-    factory135 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt136 := factory135.GetProtocol(mbTrans133)
+    factory138 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt139 := factory138.GetProtocol(mbTrans136)
     argvalue1 := ongrid2.NewEvent()
-    err137 := argvalue1.Read(jsProt136)
-    if err137 != nil {
+    err140 := argvalue1.Read(jsProt139)
+    if err140 != nil {
       Usage()
       return
     }
@@ -262,8 +263,8 @@ func main() {
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    argvalue1, err144 := (strconv.ParseInt(flag.Arg(2), 10, 64))
-    if err144 != nil {
+    argvalue1, err147 := (strconv.ParseInt(flag.Arg(2), 10, 64))
+    if err147 != nil {
       Usage()
       return
     }
@@ -322,31 +323,61 @@ func main() {
     value1 := argvalue1
     argvalue2 := flag.Arg(3)
     value2 := argvalue2
-    argvalue3, err156 := (strconv.ParseInt(flag.Arg(4), 10, 64))
-    if err156 != nil {
+    argvalue3, err159 := (strconv.ParseInt(flag.Arg(4), 10, 64))
+    if err159 != nil {
       Usage()
       return
     }
     value3 := argvalue3
-    arg157 := flag.Arg(5)
-    mbTrans158 := thrift.NewTMemoryBufferLen(len(arg157))
-    defer mbTrans158.Close()
-    _, err159 := mbTrans158.WriteString(arg157)
-    if err159 != nil { 
+    arg160 := flag.Arg(5)
+    mbTrans161 := thrift.NewTMemoryBufferLen(len(arg160))
+    defer mbTrans161.Close()
+    _, err162 := mbTrans161.WriteString(arg160)
+    if err162 != nil { 
       Usage()
       return
     }
-    factory160 := thrift.NewTSimpleJSONProtocolFactory()
-    jsProt161 := factory160.GetProtocol(mbTrans158)
+    factory163 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt164 := factory163.GetProtocol(mbTrans161)
     containerStruct4 := ongrid2.NewOngridSendMessageToCustomerArgs()
-    err162 := containerStruct4.ReadField5(jsProt161)
-    if err162 != nil {
+    err165 := containerStruct4.ReadField5(jsProt164)
+    if err165 != nil {
       Usage()
       return
     }
     argvalue4 := containerStruct4.Attachments
     value4 := argvalue4
     fmt.Print(client.SendMessageToCustomer(value0, value1, value2, value3, value4))
+    fmt.Print("\n")
+    break
+  case "SendMessageToAllCustomers":
+    if flag.NArg() - 1 != 3 {
+      fmt.Fprintln(os.Stderr, "SendMessageToAllCustomers requires 3 args")
+      flag.Usage()
+    }
+    argvalue0 := flag.Arg(1)
+    value0 := argvalue0
+    argvalue1 := flag.Arg(2)
+    value1 := argvalue1
+    arg168 := flag.Arg(3)
+    mbTrans169 := thrift.NewTMemoryBufferLen(len(arg168))
+    defer mbTrans169.Close()
+    _, err170 := mbTrans169.WriteString(arg168)
+    if err170 != nil { 
+      Usage()
+      return
+    }
+    factory171 := thrift.NewTSimpleJSONProtocolFactory()
+    jsProt172 := factory171.GetProtocol(mbTrans169)
+    containerStruct2 := ongrid2.NewOngridSendMessageToAllCustomersArgs()
+    err173 := containerStruct2.ReadField3(jsProt172)
+    if err173 != nil {
+      Usage()
+      return
+    }
+    argvalue2 := containerStruct2.Attachments
+    value2 := argvalue2
+    fmt.Print(client.SendMessageToAllCustomers(value0, value1, value2))
     fmt.Print("\n")
     break
   case "getResourcesFileNames":
