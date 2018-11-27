@@ -35,8 +35,8 @@ func Usage() {
   fmt.Fprintln(os.Stderr, "  string registerCustomer(string authToken, string email, string name, string phone)")
   fmt.Fprintln(os.Stderr, "  User checkUser(string authToken, string login, string password)")
   fmt.Fprintln(os.Stderr, "  i64 sendMessageToCustomer(string authToken, string customerId, string body, i64 parentMessageId,  attachments)")
-  fmt.Fprintln(os.Stderr, "  void SendMessageToAllCustomers(string authToken, string body,  attachments)")
-  fmt.Fprintln(os.Stderr, "   getResourcesFileNames(string authToken)")
+  fmt.Fprintln(os.Stderr, "  void sendMessageToAllCustomers(string authToken, string body,  attachments)")
+  fmt.Fprintln(os.Stderr, "   getResourcesList(string authToken)")
   fmt.Fprintln(os.Stderr, "  string getUserID(string authToken)")
   fmt.Fprintln(os.Stderr, "  void ping()")
   fmt.Fprintln(os.Stderr)
@@ -350,7 +350,7 @@ func main() {
     fmt.Print(client.SendMessageToCustomer(value0, value1, value2, value3, value4))
     fmt.Print("\n")
     break
-  case "SendMessageToAllCustomers":
+  case "sendMessageToAllCustomers":
     if flag.NArg() - 1 != 3 {
       fmt.Fprintln(os.Stderr, "SendMessageToAllCustomers requires 3 args")
       flag.Usage()
@@ -380,14 +380,14 @@ func main() {
     fmt.Print(client.SendMessageToAllCustomers(value0, value1, value2))
     fmt.Print("\n")
     break
-  case "getResourcesFileNames":
+  case "getResourcesList":
     if flag.NArg() - 1 != 1 {
-      fmt.Fprintln(os.Stderr, "GetResourcesFileNames requires 1 args")
+      fmt.Fprintln(os.Stderr, "GetResourcesList requires 1 args")
       flag.Usage()
     }
     argvalue0 := flag.Arg(1)
     value0 := argvalue0
-    fmt.Print(client.GetResourcesFileNames(value0))
+    fmt.Print(client.GetResourcesList(value0))
     fmt.Print("\n")
     break
   case "getUserID":

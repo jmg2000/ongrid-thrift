@@ -171,7 +171,17 @@ func (p *OngridHandler) AddWorkPlace(wpName, macAddr, login, password string) (t
 		return
 	}
 
-	mongoConnection.ClientAddWorkPlace(user.ID, wpName, macAddr)
+	_, err = mongoConnection.GetUserByMacAddr(login, macAddr)
+	if err != nil {
+		log.Printf("GetUserByMacAddr: %v\n", err)
+		if err.Error() == "Workplace is disabled" {
+			return "", errors.New("Workplace already exists")
+		}
+	}
+	err = mongoConnection.ClientAddWorkPlace(user.ID, wpName, macAddr)
+	if err != nil {
+		return "", err
+	}
 
 	log.Printf("AddWorkPlace: Auth.. Token = %s", token)
 
@@ -970,21 +980,28 @@ type DBFileName struct {
 	FileName string `db:"PARAMVALUE"`
 }
 
-// GetResourcesFileNames get all filenames of resources from configuration
-func (p *OngridHandler) GetResourcesFileNames(authToken string) (fileNames []string, err error) {
+// GetResourcesList get all filenames of resources from configuration
+func (p *OngridHandler) GetResourcesList(authToken string) (fileNames []*ongrid2.Resource, err error) {
+	log.Println("Start GetResourcesList1")
 	sessionID, err := checkToken(authToken)
 	if err != nil {
 		return nil, err
 	}
+	log.Println("Start GetResourcesList2")
 	var filename DBFileName
 	rows, err := sessions[sessionID].dbConfig.Queryx("select ParamValue from igo$objects i where i.objecttype = 2 and i.paramvalue is not null " +
 		"and i.objectname in (select ii.pname from igo$props ii where ii.proptype = 2 and (ii.ptype = 7 or ii.ptype = 8))")
+	if err != nil {
+		log.Printf("GetResourcesFileNames error: %v\n", err)
+	}
 	for rows.Next() {
+		var resource ongrid2.Resource
 		err := rows.StructScan(&filename)
 		if err != nil {
 			log.Printf("GetResourcesFileNames: %v", err)
 		}
-		fileNames = append(fileNames, filename.FileName)
+		resource.FileName = filename.FileName
+		fileNames = append(fileNames, &resource)
 	}
 
 	return
@@ -1098,7 +1115,7 @@ func authLP(login, password string) (string, *User, error) {
 		log.Printf("AuthLP: select from sys$clients: %v\n", err)
 		return "", nil, err
 	}
-	log.Println(user)
+	log.Printf("authLP: User: %v\n", user)
 
 	h := md5.New()
 	io.WriteString(h, password)

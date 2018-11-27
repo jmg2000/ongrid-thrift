@@ -6742,6 +6742,91 @@ func (p *User) String() string {
   return fmt.Sprintf("User(%+v)", *p)
 }
 
+// Attributes:
+//  - FileName
+type Resource struct {
+  FileName string `thrift:"fileName,1" db:"fileName" json:"fileName"`
+}
+
+func NewResource() *Resource {
+  return &Resource{}
+}
+
+
+func (p *Resource) GetFileName() string {
+  return p.FileName
+}
+func (p *Resource) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if err := p.ReadField1(iprot); err != nil {
+        return err
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *Resource)  ReadField1(iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.FileName = v
+}
+  return nil
+}
+
+func (p *Resource) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("Resource"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *Resource) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("fileName", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:fileName: ", p), err) }
+  if err := oprot.WriteString(string(p.FileName)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.fileName (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:fileName: ", p), err) }
+  return err
+}
+
+func (p *Resource) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("Resource(%+v)", *p)
+}
+
 // Structs can also be exceptions, if they are nasty.
 // 
 // Attributes:
@@ -10014,7 +10099,7 @@ type Ongrid interface {
   SendMessageToAllCustomers(authToken string, body string, attachments []*FileAttach) (err error)
   // Parameters:
   //  - AuthToken
-  GetResourcesFileNames(authToken string) (r []string, err error)
+  GetResourcesList(authToken string) (r []*Resource, err error)
   // Parameters:
   //  - AuthToken
   GetUserID(authToken string) (r string, err error)
@@ -11212,7 +11297,7 @@ func (p *OngridClient) sendSendMessageToAllCustomers(authToken string, body stri
     p.OutputProtocol = oprot
   }
   p.SeqId++
-  if err = oprot.WriteMessageBegin("SendMessageToAllCustomers", thrift.CALL, p.SeqId); err != nil {
+  if err = oprot.WriteMessageBegin("sendMessageToAllCustomers", thrift.CALL, p.SeqId); err != nil {
       return
   }
   args := OngridSendMessageToAllCustomersArgs{
@@ -11240,12 +11325,12 @@ func (p *OngridClient) recvSendMessageToAllCustomers() (err error) {
   if err != nil {
     return
   }
-  if method != "SendMessageToAllCustomers" {
-    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "SendMessageToAllCustomers failed: wrong method name")
+  if method != "sendMessageToAllCustomers" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "sendMessageToAllCustomers failed: wrong method name")
     return
   }
   if p.SeqId != seqId {
-    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "SendMessageToAllCustomers failed: out of sequence response")
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "sendMessageToAllCustomers failed: out of sequence response")
     return
   }
   if mTypeId == thrift.EXCEPTION {
@@ -11262,7 +11347,7 @@ func (p *OngridClient) recvSendMessageToAllCustomers() (err error) {
     return
   }
   if mTypeId != thrift.REPLY {
-    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "SendMessageToAllCustomers failed: invalid message type")
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "sendMessageToAllCustomers failed: invalid message type")
     return
   }
   result := OngridSendMessageToAllCustomersResult{}
@@ -11281,22 +11366,22 @@ func (p *OngridClient) recvSendMessageToAllCustomers() (err error) {
 
 // Parameters:
 //  - AuthToken
-func (p *OngridClient) GetResourcesFileNames(authToken string) (r []string, err error) {
-  if err = p.sendGetResourcesFileNames(authToken); err != nil { return }
-  return p.recvGetResourcesFileNames()
+func (p *OngridClient) GetResourcesList(authToken string) (r []*Resource, err error) {
+  if err = p.sendGetResourcesList(authToken); err != nil { return }
+  return p.recvGetResourcesList()
 }
 
-func (p *OngridClient) sendGetResourcesFileNames(authToken string)(err error) {
+func (p *OngridClient) sendGetResourcesList(authToken string)(err error) {
   oprot := p.OutputProtocol
   if oprot == nil {
     oprot = p.ProtocolFactory.GetProtocol(p.Transport)
     p.OutputProtocol = oprot
   }
   p.SeqId++
-  if err = oprot.WriteMessageBegin("getResourcesFileNames", thrift.CALL, p.SeqId); err != nil {
+  if err = oprot.WriteMessageBegin("getResourcesList", thrift.CALL, p.SeqId); err != nil {
       return
   }
-  args := OngridGetResourcesFileNamesArgs{
+  args := OngridGetResourcesListArgs{
   AuthToken : authToken,
   }
   if err = args.Write(oprot); err != nil {
@@ -11309,7 +11394,7 @@ func (p *OngridClient) sendGetResourcesFileNames(authToken string)(err error) {
 }
 
 
-func (p *OngridClient) recvGetResourcesFileNames() (value []string, err error) {
+func (p *OngridClient) recvGetResourcesList() (value []*Resource, err error) {
   iprot := p.InputProtocol
   if iprot == nil {
     iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -11319,12 +11404,12 @@ func (p *OngridClient) recvGetResourcesFileNames() (value []string, err error) {
   if err != nil {
     return
   }
-  if method != "getResourcesFileNames" {
-    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getResourcesFileNames failed: wrong method name")
+  if method != "getResourcesList" {
+    err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "getResourcesList failed: wrong method name")
     return
   }
   if p.SeqId != seqId {
-    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getResourcesFileNames failed: out of sequence response")
+    err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getResourcesList failed: out of sequence response")
     return
   }
   if mTypeId == thrift.EXCEPTION {
@@ -11341,10 +11426,10 @@ func (p *OngridClient) recvGetResourcesFileNames() (value []string, err error) {
     return
   }
   if mTypeId != thrift.REPLY {
-    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getResourcesFileNames failed: invalid message type")
+    err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "getResourcesList failed: invalid message type")
     return
   }
-  result := OngridGetResourcesFileNamesResult{}
+  result := OngridGetResourcesListResult{}
   if err = result.Read(iprot); err != nil {
     return
   }
@@ -11547,8 +11632,8 @@ func NewOngridProcessor(handler Ongrid) *OngridProcessor {
   self116.processorMap["registerCustomer"] = &ongridProcessorRegisterCustomer{handler:handler}
   self116.processorMap["checkUser"] = &ongridProcessorCheckUser{handler:handler}
   self116.processorMap["sendMessageToCustomer"] = &ongridProcessorSendMessageToCustomer{handler:handler}
-  self116.processorMap["SendMessageToAllCustomers"] = &ongridProcessorSendMessageToAllCustomers{handler:handler}
-  self116.processorMap["getResourcesFileNames"] = &ongridProcessorGetResourcesFileNames{handler:handler}
+  self116.processorMap["sendMessageToAllCustomers"] = &ongridProcessorSendMessageToAllCustomers{handler:handler}
+  self116.processorMap["getResourcesList"] = &ongridProcessorGetResourcesList{handler:handler}
   self116.processorMap["getUserID"] = &ongridProcessorGetUserID{handler:handler}
   self116.processorMap["ping"] = &ongridProcessorPing{handler:handler}
 return self116
@@ -12314,7 +12399,7 @@ func (p *ongridProcessorSendMessageToAllCustomers) Process(seqId int32, iprot, o
   if err = args.Read(iprot); err != nil {
     iprot.ReadMessageEnd()
     x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-    oprot.WriteMessageBegin("SendMessageToAllCustomers", thrift.EXCEPTION, seqId)
+    oprot.WriteMessageBegin("sendMessageToAllCustomers", thrift.EXCEPTION, seqId)
     x.Write(oprot)
     oprot.WriteMessageEnd()
     oprot.Flush()
@@ -12329,15 +12414,15 @@ func (p *ongridProcessorSendMessageToAllCustomers) Process(seqId int32, iprot, o
     case *UserException:
   result.UserException = v
     default:
-    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing SendMessageToAllCustomers: " + err2.Error())
-    oprot.WriteMessageBegin("SendMessageToAllCustomers", thrift.EXCEPTION, seqId)
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing sendMessageToAllCustomers: " + err2.Error())
+    oprot.WriteMessageBegin("sendMessageToAllCustomers", thrift.EXCEPTION, seqId)
     x.Write(oprot)
     oprot.WriteMessageEnd()
     oprot.Flush()
     return true, err2
   }
   }
-  if err2 = oprot.WriteMessageBegin("SendMessageToAllCustomers", thrift.REPLY, seqId); err2 != nil {
+  if err2 = oprot.WriteMessageBegin("sendMessageToAllCustomers", thrift.REPLY, seqId); err2 != nil {
     err = err2
   }
   if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -12355,16 +12440,16 @@ func (p *ongridProcessorSendMessageToAllCustomers) Process(seqId int32, iprot, o
   return true, err
 }
 
-type ongridProcessorGetResourcesFileNames struct {
+type ongridProcessorGetResourcesList struct {
   handler Ongrid
 }
 
-func (p *ongridProcessorGetResourcesFileNames) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-  args := OngridGetResourcesFileNamesArgs{}
+func (p *ongridProcessorGetResourcesList) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := OngridGetResourcesListArgs{}
   if err = args.Read(iprot); err != nil {
     iprot.ReadMessageEnd()
     x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-    oprot.WriteMessageBegin("getResourcesFileNames", thrift.EXCEPTION, seqId)
+    oprot.WriteMessageBegin("getResourcesList", thrift.EXCEPTION, seqId)
     x.Write(oprot)
     oprot.WriteMessageEnd()
     oprot.Flush()
@@ -12372,16 +12457,16 @@ func (p *ongridProcessorGetResourcesFileNames) Process(seqId int32, iprot, oprot
   }
 
   iprot.ReadMessageEnd()
-  result := OngridGetResourcesFileNamesResult{}
-var retval []string
+  result := OngridGetResourcesListResult{}
+var retval []*Resource
   var err2 error
-  if retval, err2 = p.handler.GetResourcesFileNames(args.AuthToken); err2 != nil {
+  if retval, err2 = p.handler.GetResourcesList(args.AuthToken); err2 != nil {
   switch v := err2.(type) {
     case *UserException:
   result.UserException = v
     default:
-    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getResourcesFileNames: " + err2.Error())
-    oprot.WriteMessageBegin("getResourcesFileNames", thrift.EXCEPTION, seqId)
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getResourcesList: " + err2.Error())
+    oprot.WriteMessageBegin("getResourcesList", thrift.EXCEPTION, seqId)
     x.Write(oprot)
     oprot.WriteMessageEnd()
     oprot.Flush()
@@ -12390,7 +12475,7 @@ var retval []string
   } else {
     result.Success = retval
 }
-  if err2 = oprot.WriteMessageBegin("getResourcesFileNames", thrift.REPLY, seqId); err2 != nil {
+  if err2 = oprot.WriteMessageBegin("getResourcesList", thrift.REPLY, seqId); err2 != nil {
     err = err2
   }
   if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -16193,7 +16278,7 @@ func (p *OngridSendMessageToAllCustomersArgs)  ReadField3(iprot thrift.TProtocol
 }
 
 func (p *OngridSendMessageToAllCustomersArgs) Write(oprot thrift.TProtocol) error {
-  if err := oprot.WriteStructBegin("SendMessageToAllCustomers_args"); err != nil {
+  if err := oprot.WriteStructBegin("sendMessageToAllCustomers_args"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
   if p != nil {
     if err := p.writeField1(oprot); err != nil { return err }
@@ -16315,7 +16400,7 @@ func (p *OngridSendMessageToAllCustomersResult)  ReadField1(iprot thrift.TProtoc
 }
 
 func (p *OngridSendMessageToAllCustomersResult) Write(oprot thrift.TProtocol) error {
-  if err := oprot.WriteStructBegin("SendMessageToAllCustomers_result"); err != nil {
+  if err := oprot.WriteStructBegin("sendMessageToAllCustomers_result"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
   if p != nil {
     if err := p.writeField1(oprot); err != nil { return err }
@@ -16349,19 +16434,19 @@ func (p *OngridSendMessageToAllCustomersResult) String() string {
 
 // Attributes:
 //  - AuthToken
-type OngridGetResourcesFileNamesArgs struct {
+type OngridGetResourcesListArgs struct {
   AuthToken string `thrift:"authToken,1" db:"authToken" json:"authToken"`
 }
 
-func NewOngridGetResourcesFileNamesArgs() *OngridGetResourcesFileNamesArgs {
-  return &OngridGetResourcesFileNamesArgs{}
+func NewOngridGetResourcesListArgs() *OngridGetResourcesListArgs {
+  return &OngridGetResourcesListArgs{}
 }
 
 
-func (p *OngridGetResourcesFileNamesArgs) GetAuthToken() string {
+func (p *OngridGetResourcesListArgs) GetAuthToken() string {
   return p.AuthToken
 }
-func (p *OngridGetResourcesFileNamesArgs) Read(iprot thrift.TProtocol) error {
+func (p *OngridGetResourcesListArgs) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
   }
@@ -16393,7 +16478,7 @@ func (p *OngridGetResourcesFileNamesArgs) Read(iprot thrift.TProtocol) error {
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesArgs)  ReadField1(iprot thrift.TProtocol) error {
+func (p *OngridGetResourcesListArgs)  ReadField1(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadString(); err != nil {
   return thrift.PrependError("error reading field 1: ", err)
 } else {
@@ -16402,8 +16487,8 @@ func (p *OngridGetResourcesFileNamesArgs)  ReadField1(iprot thrift.TProtocol) er
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesArgs) Write(oprot thrift.TProtocol) error {
-  if err := oprot.WriteStructBegin("getResourcesFileNames_args"); err != nil {
+func (p *OngridGetResourcesListArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getResourcesList_args"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
   if p != nil {
     if err := p.writeField1(oprot); err != nil { return err }
@@ -16415,7 +16500,7 @@ func (p *OngridGetResourcesFileNamesArgs) Write(oprot thrift.TProtocol) error {
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *OngridGetResourcesListArgs) writeField1(oprot thrift.TProtocol) (err error) {
   if err := oprot.WriteFieldBegin("authToken", thrift.STRING, 1); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:authToken: ", p), err) }
   if err := oprot.WriteString(string(p.AuthToken)); err != nil {
@@ -16425,46 +16510,46 @@ func (p *OngridGetResourcesFileNamesArgs) writeField1(oprot thrift.TProtocol) (e
   return err
 }
 
-func (p *OngridGetResourcesFileNamesArgs) String() string {
+func (p *OngridGetResourcesListArgs) String() string {
   if p == nil {
     return "<nil>"
   }
-  return fmt.Sprintf("OngridGetResourcesFileNamesArgs(%+v)", *p)
+  return fmt.Sprintf("OngridGetResourcesListArgs(%+v)", *p)
 }
 
 // Attributes:
 //  - Success
 //  - UserException
-type OngridGetResourcesFileNamesResult struct {
-  Success []string `thrift:"success,0" db:"success" json:"success,omitempty"`
+type OngridGetResourcesListResult struct {
+  Success []*Resource `thrift:"success,0" db:"success" json:"success,omitempty"`
   UserException *UserException `thrift:"userException,1" db:"userException" json:"userException,omitempty"`
 }
 
-func NewOngridGetResourcesFileNamesResult() *OngridGetResourcesFileNamesResult {
-  return &OngridGetResourcesFileNamesResult{}
+func NewOngridGetResourcesListResult() *OngridGetResourcesListResult {
+  return &OngridGetResourcesListResult{}
 }
 
-var OngridGetResourcesFileNamesResult_Success_DEFAULT []string
+var OngridGetResourcesListResult_Success_DEFAULT []*Resource
 
-func (p *OngridGetResourcesFileNamesResult) GetSuccess() []string {
+func (p *OngridGetResourcesListResult) GetSuccess() []*Resource {
   return p.Success
 }
-var OngridGetResourcesFileNamesResult_UserException_DEFAULT *UserException
-func (p *OngridGetResourcesFileNamesResult) GetUserException() *UserException {
+var OngridGetResourcesListResult_UserException_DEFAULT *UserException
+func (p *OngridGetResourcesListResult) GetUserException() *UserException {
   if !p.IsSetUserException() {
-    return OngridGetResourcesFileNamesResult_UserException_DEFAULT
+    return OngridGetResourcesListResult_UserException_DEFAULT
   }
 return p.UserException
 }
-func (p *OngridGetResourcesFileNamesResult) IsSetSuccess() bool {
+func (p *OngridGetResourcesListResult) IsSetSuccess() bool {
   return p.Success != nil
 }
 
-func (p *OngridGetResourcesFileNamesResult) IsSetUserException() bool {
+func (p *OngridGetResourcesListResult) IsSetUserException() bool {
   return p.UserException != nil
 }
 
-func (p *OngridGetResourcesFileNamesResult) Read(iprot thrift.TProtocol) error {
+func (p *OngridGetResourcesListResult) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
   }
@@ -16500,20 +16585,18 @@ func (p *OngridGetResourcesFileNamesResult) Read(iprot thrift.TProtocol) error {
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesResult)  ReadField0(iprot thrift.TProtocol) error {
+func (p *OngridGetResourcesListResult)  ReadField0(iprot thrift.TProtocol) error {
   _, size, err := iprot.ReadListBegin()
   if err != nil {
     return thrift.PrependError("error reading list begin: ", err)
   }
-  tSlice := make([]string, 0, size)
+  tSlice := make([]*Resource, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-var _elem124 string
-    if v, err := iprot.ReadString(); err != nil {
-    return thrift.PrependError("error reading field 0: ", err)
-} else {
-    _elem124 = v
-}
+    _elem124 := &Resource{}
+    if err := _elem124.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem124), err)
+    }
     p.Success = append(p.Success, _elem124)
   }
   if err := iprot.ReadListEnd(); err != nil {
@@ -16522,7 +16605,7 @@ var _elem124 string
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesResult)  ReadField1(iprot thrift.TProtocol) error {
+func (p *OngridGetResourcesListResult)  ReadField1(iprot thrift.TProtocol) error {
   p.UserException = &UserException{}
   if err := p.UserException.Read(iprot); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.UserException), err)
@@ -16530,8 +16613,8 @@ func (p *OngridGetResourcesFileNamesResult)  ReadField1(iprot thrift.TProtocol) 
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesResult) Write(oprot thrift.TProtocol) error {
-  if err := oprot.WriteStructBegin("getResourcesFileNames_result"); err != nil {
+func (p *OngridGetResourcesListResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getResourcesList_result"); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
   if p != nil {
     if err := p.writeField0(oprot); err != nil { return err }
@@ -16544,16 +16627,17 @@ func (p *OngridGetResourcesFileNamesResult) Write(oprot thrift.TProtocol) error 
   return nil
 }
 
-func (p *OngridGetResourcesFileNamesResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *OngridGetResourcesListResult) writeField0(oprot thrift.TProtocol) (err error) {
   if p.IsSetSuccess() {
     if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
       return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
-    if err := oprot.WriteListBegin(thrift.STRING, len(p.Success)); err != nil {
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Success)); err != nil {
       return thrift.PrependError("error writing list begin: ", err)
     }
     for _, v := range p.Success {
-      if err := oprot.WriteString(string(v)); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err) }
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
     }
     if err := oprot.WriteListEnd(); err != nil {
       return thrift.PrependError("error writing list end: ", err)
@@ -16564,7 +16648,7 @@ func (p *OngridGetResourcesFileNamesResult) writeField0(oprot thrift.TProtocol) 
   return err
 }
 
-func (p *OngridGetResourcesFileNamesResult) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *OngridGetResourcesListResult) writeField1(oprot thrift.TProtocol) (err error) {
   if p.IsSetUserException() {
     if err := oprot.WriteFieldBegin("userException", thrift.STRUCT, 1); err != nil {
       return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:userException: ", p), err) }
@@ -16577,11 +16661,11 @@ func (p *OngridGetResourcesFileNamesResult) writeField1(oprot thrift.TProtocol) 
   return err
 }
 
-func (p *OngridGetResourcesFileNamesResult) String() string {
+func (p *OngridGetResourcesListResult) String() string {
   if p == nil {
     return "<nil>"
   }
-  return fmt.Sprintf("OngridGetResourcesFileNamesResult(%+v)", *p)
+  return fmt.Sprintf("OngridGetResourcesListResult(%+v)", *p)
 }
 
 // Attributes:

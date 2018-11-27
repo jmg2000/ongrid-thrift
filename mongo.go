@@ -123,7 +123,7 @@ func (c *MongoConnection) GetUserByMacAddr(login string, macAddr string) (user U
 		return
 	}
 	defer session.Close()
-	fmt.Printf("MacAddr: %s\n", macAddr)
+	log.Printf("MacAddr: %s\n", macAddr)
 	err = clientCollection.Find(bson.M{"email": login, "workPlaces.macAddr": macAddr}).One(&result)
 	if err != nil {
 		log.Println(err)
