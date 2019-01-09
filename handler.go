@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/centrifugal/gocent"
 	"github.com/jmoiron/sqlx"
 	"github.com/kylelemons/go-gypsy/yaml"
@@ -380,13 +382,14 @@ func (p *DBHandler) BatchExecute(authToken string, queries []*ongrid2.Query, con
 	}
 	tx.Commit()
 
+	return "", nil
+
 	_, err = sessions[sessionID].dbData.NamedExec(onSuccess.Sql, getParams(onSuccess))
 	if err != nil {
 		return "", fmt.Errorf("BatchExecute, onSuccess error: query: %s - %v", onSuccess.Sql, err)
 	}
 
 	return "", nil
-
 }
 
 /* Other function */
@@ -564,7 +567,7 @@ func (p *OngridHandler) PostEvent(authToken string, event *ongrid2.Event) (strin
 	return hexUUID, nil
 }
 
-// GetCentrifugoConf ...
+// GetCentrifugoConf return Centrifugo config
 func (p *OngridHandler) GetCentrifugoConf(authToken string) (*ongrid2.CentrifugoConf, error) {
 	if _, err := checkToken(authToken); err != nil {
 		return nil, err
@@ -695,11 +698,19 @@ func (p *OngridHandler) GetConfiguration(authToken string) (*ongrid2.ConfigObjec
 					// property
 					if _, ok := baseObjects[DBObject.Owner]; ok {
 						baseObjects[DBObject.Owner].Props = append(baseObjects[DBObject.Owner].Props, &object)
+						// if Owner is Configuration object
+						if DBObject.Owner == 1 {
+							Configuration.Props = append(Configuration.Props, &object)
+						}
 					}
 				case 3:
 					// event
 					if _, ok := baseObjects[DBObject.Owner]; ok {
 						baseObjects[DBObject.Owner].Events = append(baseObjects[DBObject.Owner].Events, &object)
+						// if Owner is Configuration object
+						if DBObject.Owner == 1 {
+							Configuration.Events = append(Configuration.Events, &object)
+						}
 					}
 				default:
 					// object
@@ -1117,10 +1128,13 @@ func authLP(login, password string) (string, *User, error) {
 	}
 	log.Printf("authLP: User: %v\n", user)
 
-	h := md5.New()
-	io.WriteString(h, password)
-	hpass := fmt.Sprintf("%x", h.Sum(nil))
-	if user.Password == hpass {
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+
+	// h := md5.New()
+	// io.WriteString(h, password)
+	// hpass := fmt.Sprintf("%x", h.Sum(nil))
+	// if user.Password == hpass {
+	if err == nil {
 		log.Println("authLP: Password correct")
 		authToken, err := startSession(&user)
 		if err != nil {
@@ -1128,7 +1142,7 @@ func authLP(login, password string) (string, *User, error) {
 		}
 		return authToken, &user, nil
 	}
-
+	log.Println("Password incorrect")
 	return "", nil, fmt.Errorf("Auth failed. Login: %s", login)
 }
 
